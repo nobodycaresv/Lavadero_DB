@@ -2,7 +2,7 @@ from django.db import models
 
 
 class Estado(models.Model):
-    TIPOS = [("turno", "Turno"), ("orden", "Orden"), ("pago", "Pago"), ("caja", "Caja")]
+    TIPOS = [("turno", "Turno"), ("orden", "Orden"), ("pago", "Pago")]
     id_estado = models.AutoField(primary_key=True)
     tipo = models.CharField(max_length=20, choices=TIPOS)
     nombre = models.CharField(max_length=30)
@@ -206,18 +206,6 @@ class DetalleCompra(models.Model):
     def __str__(self):
         return f"Detalle compra #{self.id_detalle_compra}"
 
-
-class Caja(models.Model):
-    id_caja = models.AutoField(primary_key=True)
-    fecha = models.DateField()
-    saldo_inicial = models.DecimalField(max_digits=10, decimal_places=2)
-    saldo_final = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    estado = models.ForeignKey(Estado, on_delete=models.PROTECT, related_name="+")
-
-    def __str__(self):
-        return f"Caja {self.fecha}"
-
-
 class Factura(models.Model):
     id_factura = models.AutoField(primary_key=True)
     cliente = models.ForeignKey(Cliente, on_delete=models.PROTECT, related_name="facturas")
@@ -235,11 +223,11 @@ class Factura(models.Model):
 class Pago(models.Model):
     id_pago = models.AutoField(primary_key=True)
     factura = models.ForeignKey(Factura, on_delete=models.PROTECT, related_name="pagos")
-    caja = models.ForeignKey(Caja, on_delete=models.PROTECT, related_name="pagos")
     medio_pago = models.ForeignKey(MedioPago, on_delete=models.PROTECT, related_name="pagos")
     estado = models.ForeignKey(Estado, on_delete=models.PROTECT, related_name="+")
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_hora = models.DateTimeField()
+    concepto = models.CharField(max_length=100, blank=True)
     pago_adelanto = models.BooleanField(default=False)
 
     def __str__(self):
