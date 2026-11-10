@@ -27,13 +27,13 @@ services:
   web:
     build: .
     restart: unless-stopped
-    command: python manage.py runserver 0.0.0.0:8000
+    command: python manage.py runserver 0.0.0.0:8001
     volumes:
       # Monta el código del host dentro del contenedor: los cambios que hagan
       # en su editor (VS Code) se reflejan al instante, sin reconstruir la imagen.
       - .:/app
     ports:
-      - "8000:8000"
+      - "8001:8001"
     environment:
       DEBUG: "1"
       SECRET_KEY: "clave-secreta-de-desarrollo-cambiar-en-produccion"
