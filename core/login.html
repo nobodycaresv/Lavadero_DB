@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Iniciar sesión · Rosario Estética Vehicular</title>
+<style>
+  :root {
+    --background: #000000;
+    --surface: #121212;
+    --border: #2C2C2C;
+    --text-primary: #FFFFFF;
+    --text-secondary: #AAAAAA;
+    --text-muted: #666666;
+    --accent: #BD201B;
+    --accent-dark: #8A1410;
+    --accent-text: #ffffff;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--background);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    overflow-y: auto;
+  }
+  .card {
+    width: 100%;
+    max-width: 460px;
+  }
+  .logo {
+    display: block;
+    width: 220px;
+    height: 110px;
+    margin: 0 auto 32px;
+    object-fit: contain;
+  }
+  /* tengo que reemplazar el logo */
+  .logo-placeholder {
+    width: 220px; height: 110px; margin: 0 auto 32px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 1px dashed var(--border); border-radius: 8px;
+    text-align: center; line-height: 1.2;
+  }
+  .logo-placeholder strong { font-size: 24px; letter-spacing: 3px; }
+  .logo-placeholder span { font-size: 11px; letter-spacing: 2px; color: var(--text-secondary); margin-top: 6px; }
+  h1 { font-size: 32px; font-weight: 700; text-align: center; margin: 0; }
+  .subtitle {
+    text-align: center; color: var(--text-secondary);
+    font-size: 16px; margin: 4px 0 32px;
+  }
+  label { display: block; color: var(--text-secondary); font-size: 16px; margin-top: 16px; }
+  .field {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 0 14px; height: 52px; margin-top: 8px;
+  }
+  .field:focus-within { border-color: var(--text-secondary); }
+  .field svg { flex: none; stroke: var(--text-secondary); }
+  .field input {
+    flex: 1; min-width: 0; background: transparent; border: 0; outline: 0;
+    color: var(--text-primary); font-size: 16px; font-family: inherit;
+  }
+  .field input::placeholder { color: var(--text-muted); }
+  .eye { background: none; border: 0; padding: 0; cursor: pointer; display: flex; }
+  .btn {
+    width: 100%; height: 52px; margin-top: 28px; border: 0; border-radius: 10px;
+    background: var(--accent); color: var(--accent-text);
+    font-size: 16px; font-weight: 700; letter-spacing: 1px; cursor: pointer;
+    font-family: inherit;
+  }
+  .btn:hover { background: var(--accent-dark); }
+  .link {
+    display: block; text-align: center; color: var(--text-secondary);
+    margin-top: 16px; text-decoration: none; font-size: 15px;
+  }
+  .link:hover { color: var(--text-primary); text-decoration: underline; }
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="logo-placeholder" aria-label="Logo Rosario">
+      <strong>ROSARIO</strong>
+      <span>ESTÉTICA VEHICULAR</span>
+    </div>
+
+    <h1>Iniciar sesión</h1>
+    <p class="subtitle">Ingrese su correo y contraseña para continuar</p>
+
+    <label for="correo">Correo electrónico</label>
+    <div class="field">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      <input id="correo" type="email" placeholder="Ingresa tu correo" autocomplete="email">
+    </div>
+
+    <label for="contrasena">Contraseña</label>
+    <div class="field">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      <input id="contrasena" type="password" placeholder="Ingresa tu contraseña" autocomplete="current-password">
+      <button class="eye" type="button" id="ojo" aria-label="Mostrar contraseña">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#AAAAAA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 6.1A10 10 0 0 1 12 6c5 0 9 6 9 6a15 15 0 0 1-3.2 3.7M6.4 7.6A15 15 0 0 0 3 12s4 6 9 6c1.4 0 2.7-.4 3.8-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+      </button>
+    </div>
+
+    <button class="btn" type="button">INGRESAR</button>
+
+    <a class="link" href="#">¿Olvidaste tu contraseña?</a>
+    <a class="link" href="#">¿No tienes cuenta aún? Regístrate</a>
+  </main>
+
+<script>
+  var ojo = document.getElementById('ojo');
+  var pass = document.getElementById('contrasena');
+  ojo.addEventListener('click', function () {
+    var oculto = pass.type === 'password';
+    pass.type = oculto ? 'text' : 'password';
+    ojo.setAttribute('aria-label', oculto ? 'Ocultar contraseña' : 'Mostrar contraseña');
+  });
+</script>
+</body>
+</html>
