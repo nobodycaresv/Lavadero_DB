@@ -1,10 +1,12 @@
-from django.contrib import admin
 from django.urls import include, path
-from core import views as core_views
+from rest_framework.routers import DefaultRouter
+
+from .views import EstadoAPIView, ServicioViewSet
+
+router = DefaultRouter(trailing_slash=False)
+router.register("servicios", ServicioViewSet, basename="servicio")
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("api/", include("api.urls")),
+    path("estado/", EstadoAPIView.as_view(), name="api-estado"),
+    path("", include(router.urls)),
 ]
-if hasattr(core_views, "home"):
-    urlpatterns.append(path("", core_views.home, name="home"))
