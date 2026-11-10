@@ -54,7 +54,7 @@ class Proveedor(models.Model):
 
 class Empleado(models.Model):
     ROLES = [("propietario", "Propietario"), ("gerente", "Gerente"),
-             ("supervisor", "Supervisor"), ("lavador", "Lavador")]
+    ("supervisor", "Supervisor"), ("lavador", "Lavador")]
     id_empleado = models.AutoField(primary_key=True)
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
