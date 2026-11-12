@@ -1,54 +1,37 @@
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from core.models import Cliente, Vehiculo
-
 from .serializers import ClienteSerializer, VehiculoSerializer
 
 class EstadoAPIView(APIView):
-    """Endpoint de prueba: http://localhost:8000/api/estado/"""
-
     def get(self, request):
-        return Response(
-            {"estado": "ok", "mensaje": "La API REST del proyecto esta funcionando correctamente."},
-            status=status.HTTP_200_OK,
-        )
+        return Response({"estado": "ok", "mensaje": "La API REST del proyecto esta funcionando correctamente."})
 
-class SoftDeleteMixin:
-    """
-    Los modelos usan on_delete=PROTECT, así que borrar un cliente con vehículos
-    o turnos lanzaría ProtectedError. En vez de eso hacemos baja lógica (activo=False).
-    """
+class BajaLogicaViewSet(viewsets.ModelViewSet):
+    #CRUD base con baja lógica (activo=False)
 
-    def perform_destroy(self, instance):
+    filter_backends = [filters.SearchFilter]
+
+    def get_queryset(self):
+        activo = self.request.query_params.get("activo", "true").lower() != "false" # en pocas palabras, si no viene activo=false, devuelve solo activos
+        return self.queryset.filter(activo=activo)
+
+    def perform_destroy(self, instance): # de ejecuta solo para el delete y solo lo marca como inactivo y no borra en la base de datos
         instance.activo = False
         instance.save(update_fields=["activo"])
 
-
-class ClienteViewSet(SoftDeleteMixin, viewsets.ModelViewSet):
+class ClienteViewSet(BajaLogicaViewSet):
+    queryset = Cliente.objects.prefetch_related("vehiculos").order_by("apellido", "nombre")
     serializer_class = ClienteSerializer
-    filter_backends = [filters.SearchFilter]
     search_fields = ["nombre", "apellido", "telefono", "email"]
 
-    def get_queryset(self):
-        qs = Cliente.objects.prefetch_related("vehiculos").order_by("apellido", "nombre")
-        # Por defecto solo activos; ?activo=false para ver los dados de baja
-        activo = self.request.query_params.get("activo", "true").lower() != "false"
-        return qs.filter(activo=activo)
-
-
-class VehiculoViewSet(SoftDeleteMixin, viewsets.ModelViewSet):
+class VehiculoViewSet(BajaLogicaViewSet):
+    queryset = Vehiculo.objects.select_related("cliente").order_by("patente")
     serializer_class = VehiculoSerializer
-    filter_backends = [filters.SearchFilter]
     search_fields = ["patente", "marca", "modelo"]
 
     def get_queryset(self):
-        qs = Vehiculo.objects.select_related("cliente").order_by("patente")
-        activo = self.request.query_params.get("activo", "true").lower() != "false"
-        qs = qs.filter(activo=activo)
+        qs = super().get_queryset()
         cliente = self.request.query_params.get("cliente")  # ?cliente=3
-        if cliente:
-            qs = qs.filter(cliente_id=cliente)
-        return qs
-
+        return qs.filter(cliente_id=cliente) if cliente else qs

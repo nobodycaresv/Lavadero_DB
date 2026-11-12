@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel · Clientes y Vehículos</title>
+  <link rel="stylesheet" href="{% static 'api/panel.css' %}">
+  <script src="{% static 'api/panel.js' %}" defer></script>
+</head>
+<body>
+  {% csrf_token %}
+  <header class="topbar">
+    <h1>Rosario Estética Vehicular</h1>
+    <nav class="tabs">
+      <button class="tab activa" data-tab="clientes">Clientes</button>
+      <button class="tab" data-tab="vehiculos">Vehículos</button>
+    </nav>
+  </header>
+
+  <main class="contenedor">
+    <section class="barra">
+      <input id="buscar" type="search" placeholder="Buscar...">
+      <label class="check">
+        <input id="inactivos" type="checkbox"> Eliminados
+      </label>
+      <button id="btn-nuevo" class="btn primario">+ Nuevo</button>
+    </section>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <p id="vacio" class="vacio" hidden>No hay registros para mostrar.</p>
+    </div>
+  </main>
+
+  <dialog id="modal">
+    <form id="form" method="dialog">
+      <h2 id="modal-titulo"></h2>
+      <div id="campos"></div>
+      <p id="errores" class="errores" hidden></p>
+      <div class="acciones-modal">
+        <button type="button" id="cancelar" class="btn">Cancelar</button>
+        <button type="submit" class="btn primario">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="aviso" class="aviso" hidden></div>
+</body>
+</html>
