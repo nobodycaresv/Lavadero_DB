@@ -1,62 +1,291 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Proyecto funcionando</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Servicios - Rosario Estética Vehicular</title>
     <style>
+        /* Paleta de Colores Institucional */
+        :root {
+            --negro-institucional: #000000;
+            --rojo-rosario: #BD201B;
+            --blanco: #FFFFFF;
+            --gris-metalico: #C8C8C8;
+        }
+
         body {
-            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-            background: #EAF1F8;
-            color: #12202E;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--negro-institucional);
+            color: var(--blanco);
             margin: 0;
+            padding: 0;
         }
-        .card {
-            background: #FFFFFF;
-            border: 1px solid #CFDCE8;
-            border-radius: 12px;
-            padding: 40px 48px;
-            max-width: 560px;
-            box-shadow: 0 4px 16px rgba(11, 37, 69, 0.08);
+
+        /* Encabezado con Logo */
+        header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 3px solid var(--rojo-rosario);
+            background-color: #0a0a0a; /* Ligero contraste para dar profundidad */
         }
+
+        header img {
+            max-height: 120px;
+            object-fit: contain;
+        }
+
+        /* Contenedor Principal */
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #111111;
+            border: 1px solid var(--gris-metalico);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(189, 32, 27, 0.15); /* Sutil resplandor rojo */
+        }
+
         h1 {
-            color: #0B2545;
-            margin-top: 0;
+            color: var(--rojo-rosario);
+            text-align: center;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
-        .badge {
-            display: inline-block;
-            background: #1B4F82;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 999px;
+
+        /* Formulario */
+        .form-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        input[type="text"], input[type="number"] {
+            flex: 1;
+            padding: 12px;
+            background-color: var(--negro-institucional);
+            border: 1px solid var(--gris-metalico);
+            color: var(--blanco);
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: var(--rojo-rosario);
+        }
+
+        /* Botones */
+        button {
+            padding: 12px 24px;
+            background-color: var(--rojo-rosario);
+            color: var(--blanco);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #9a1a16;
+        }
+
+        .btn-edit {
+            background-color: var(--gris-metalico);
+            color: var(--negro-institucional);
+            padding: 8px 16px;
             font-size: 14px;
-            margin-bottom: 16px;
         }
-        code {
-            background: #EAF1F8;
-            padding: 2px 6px;
-            border-radius: 4px;
+
+        .btn-edit:hover {
+            background-color: #a8a8a8;
         }
-        footer {
-            margin-top: 24px;
-            font-size: 13px;
-            color: #5A6B7B;
+
+        .btn-delete {
+            background-color: transparent;
+            color: var(--rojo-rosario);
+            border: 1px solid var(--rojo-rosario);
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .btn-delete:hover {
+            background-color: var(--rojo-rosario);
+            color: var(--blanco);
+        }
+
+        /* Tabla de Servicios */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #333333;
+        }
+
+        th {
+            color: var(--gris-metalico);
+            font-weight: bold;
+            border-bottom: 2px solid var(--rojo-rosario);
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background-color: #1a1a1a;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
         }
     </style>
 </head>
 <body>
-    <div class="card">
-        <span class="badge">Stack funcionando</span>
-        <h1>Django + Docker + Postgres</h1>
-        <p>Si están viendo esta página, el contenedor de Django se conectó
-        correctamente a la base de datos Postgres y el servidor está corriendo.</p>
-        <p>Hora del servidor: <code>{{ hora_actual }}</code></p>
-        <p>Ahora reemplacen esta vista por las de su propio proyecto para la
-        organización que les toque en Práctica Profesional II.</p>
-        <footer>ISDEM &middot; Práctica Profesional II &middot; Prof. Lic. Adrián Aguirre</footer>
+
+    <header>
+        <!-- La etiqueta del logo usando los estáticos de Django -->
+        <img src="{% static 'core/img/logo.jpg' %}" alt="Logo Rosario Estética Vehicular">
+    </header>
+
+    <div class="container">
+        <h1>Gestión de Servicios</h1>
+
+        <form id="service-form" class="form-group">
+            {% csrf_token %}
+            <input type="hidden" id="service-id">
+            <input type="text" id="nombre" placeholder="Nombre del servicio (Ej. Tratamiento Acrílico)" required>
+            <input type="number" id="precio" placeholder="Precio ($)" step="0.01" required>
+            <!-- Ajusté el campo para la duración obligatoria en tu modelo -->
+            <input type="number" id="duracion" placeholder="Duración (Min)" required>
+            <button type="submit">Guardar</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Servicio</th>
+                    <th>Duración</th>
+                    <th>Precio</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="services-table-body">
+                <!-- Se llenará dinámicamente -->
+            </tbody>
+        </table>
     </div>
+
+    <script>
+        const API_URL = '/api/servicios'; 
+
+        async function cargarServicios() {
+            try {
+                const res = await fetch(API_URL);
+                const servicios = await res.json();
+                const tbody = document.getElementById('services-table-body');
+                tbody.innerHTML = '';
+                
+                servicios.forEach(s => {
+                    if(s.activo) {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${s.nombre_servicio}</td>
+                                <td>${s.duracion} min</td>
+                                <td>$${s.precio}</td>
+                                <td class="actions">
+                                    <button type="button" onclick="editar(${s.id_servicio}, '${s.nombre_servicio}', ${s.precio}, ${s.duracion})" class="btn-edit">Editar</button>
+                                    <button type="button" onclick="eliminar(${s.id_servicio})" class="btn-delete">Eliminar</button>
+                                </td>
+                            </tr>
+                        `;
+                    }
+                });
+            } catch (error) {
+                console.error("Error cargando los servicios:", error);
+            }
+        }
+
+        document.getElementById('service-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('service-id').value;
+            const nombre_servicio = document.getElementById('nombre').value;
+            const precio = parseFloat(document.getElementById('precio').value); // Convertimos a número
+            const duracion = parseInt(document.getElementById('duracion').value); // Convertimos a entero
+            
+            // 1. Capturamos el token de seguridad generado por Django
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_URL}/${id}` : API_URL;
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken // 2. Lo enviamos en la petición
+                    },
+                    body: JSON.stringify({ nombre_servicio, precio, duracion, activo: true })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    alert("Error del servidor: " + errorData);
+                    return;
+                }
+
+                e.target.reset();
+                document.getElementById('service-id').value = '';
+                cargarServicios();
+            } catch (error) {
+                alert("Error al comunicarse con la API.");
+            }
+        });
+
+    async function eliminar(id) {
+            if (confirm('¿Estás seguro de eliminar este servicio permanentemente?')) {
+                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                try {
+                    // 1. Quitamos la palabra /desactivar de la URL
+                    // 2. Cambiamos el método de 'PATCH' a 'DELETE'
+                    const response = await fetch(`${API_URL}/${id}`, { 
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        alert("No se pudo eliminar. Es posible que el servicio esté asociado a un turno existente.");
+                        return;
+                    }
+                    
+                    cargarServicios();
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+        }
+
+        function editar(id, nombre, precio, duracion) {
+            document.getElementById('service-id').value = id;
+            document.getElementById('nombre').value = nombre;
+            document.getElementById('precio').value = precio;
+            document.getElementById('duracion').value = duracion;
+        }
+
+        cargarServicios();
+    </script>  
 </body>
 </html>

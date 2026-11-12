@@ -26,6 +26,7 @@ class ServicioViewSet(
     mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     queryset = Servicio.objects.all().order_by("id_servicio")
