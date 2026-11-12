@@ -1,0 +1,52 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Panel de Administración | Rosario Estética</title>
+  <link rel="stylesheet" href="{% static 'css/panel.css' %}">
+</head>
+
+<body>
+  {% csrf_token %}
+
+  <header>
+    <h1>PANEL DE ADMINISTRACIÓN <span>|</span> ROSARIO ESTÉTICA VEHICULAR</h1>
+    <nav class="barra-navegacion">
+      <button class="pestana activa" data-tipo="proveedores">Proveedores</button>
+      <button class="pestana" data-tipo="insumos">Insumos</button>
+    </nav>
+  </header>
+
+  <main>
+    <div class="barra-herramientas">
+      <input type="search" id="buscador" placeholder="Buscar...">
+      <label id="contenedor-filtro-baja" hidden>
+        <input type="checkbox" id="check-inactivos"> Ver dados de baja
+      </label>
+      <button class="btn-rojo" id="btn-nuevo">+ Nuevo</button>
+    </div>
+
+    <div class="grilla" id="grilla-elementos"></div>
+  </main>
+
+  <dialog id="modal-formulario">
+    <h2 id="titulo-modal"></h2>
+    <form id="formulario-principal">
+      <div id="contenedor-campos"></div>
+      <p class="error" id="mensaje-error"></p>
+      <div class="acciones-modal">
+        <button type="button" id="btn-cancelar" class="btn">Cancelar</button>
+        <button type="submit" class="btn-rojo">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="notificacion-toast"></div>
+
+  <script src="{% static 'js/panel.js' %}"></script>
+
+</body>
+</html>
