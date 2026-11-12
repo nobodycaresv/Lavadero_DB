@@ -10,4 +10,3 @@ class MedioPagoSerializer(serializers.ModelSerializer):
     class Meta:
         model = MedioPago
         fields = ["id_medio_pago", "nombre"]
-        

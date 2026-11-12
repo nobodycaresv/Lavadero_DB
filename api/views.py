@@ -1,4 +1,5 @@
 from rest_framework import filters, viewsets
+from django.shortcuts import render
 from core.models import Estado, MedioPago
 from .serializers import EstadoSerializer, MedioPagoSerializer
 
@@ -29,3 +30,10 @@ class MedioPagoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return MedioPago.objects.order_by("nombre")
+
+
+def panel_gestion(request):
+    """
+    Vista propia en HTML con la identidad visual de Rosario Estética Vehicular.
+    """
+    return render(request, 'api/gestion.html')
