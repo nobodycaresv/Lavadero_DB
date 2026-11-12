@@ -7,3 +7,6 @@ def home(request):
         'hora_actual': timezone.now(),
     }
     return render(request, 'core/home.html', contexto)
+
+def panel_empresas_convenios(request):
+    return render(request, 'panel_empresas_convenios.html')
