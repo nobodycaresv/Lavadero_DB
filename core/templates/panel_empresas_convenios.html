@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rosario Estética Vehicular | Empresas y convenios</title>
+<style>
+  /* Colores del logo */
+  :root { --rojo: #d4141c; --plata: #b9b9b9; }
+  body { margin: 0; background: #000; color: #fff; font-family: Arial, sans-serif; }
+  header { padding: 20px 24px; border-bottom: 4px solid var(--rojo); }
+  header h1 { margin: 0; font-size: 44px; font-style: italic; }
+  header span { color: var(--rojo); font-style: italic; font-weight: bold; }
+  main { max-width: 1000px; margin: 0 auto; padding: 24px; }
+  section { background: #151515; border-top: 4px solid var(--rojo); padding: 20px; margin-bottom: 24px; }
+  h2 { margin-top: 0; font-style: italic; }
+  form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  label { color: var(--plata); font-size: 14px; }
+  input, select { display: block; width: 100%; margin-top: 4px; padding: 8px; box-sizing: border-box;
+                  background: #000; color: #fff; border: 1px solid #444; }
+  button { background: var(--rojo); color: #fff; border: 0; padding: 9px 16px; cursor: pointer; }
+  button.gris { background: #444; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; color: var(--plata); border-bottom: 2px solid var(--rojo); padding: 8px; }
+  td { padding: 8px; border-bottom: 1px solid #2c2c2c; }
+  .baja { opacity: .4; }
+  #aviso { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #fff;
+           color: #000; border-left: 8px solid var(--rojo); padding: 12px 20px; display: none; }
+</style>
+</head>
+<body>
+<div hidden>{% csrf_token %}</div>
+
+<header><h1>ROSARIO <span>Estética vehicular</span></h1></header>
+
+<main>
+  <!-- ========== EMPRESAS ========== -->
+  <section>
+    <h2>Empresas</h2>
+    <form onsubmit="guardarEmpresa(event)">
+      <input type="hidden" id="e-id">
+      <label>Razón social <input id="e-razon" required></label>
+      <label>CUIT <input id="e-cuit" placeholder="30-12345678-9" required></label>
+      <label>Email <input id="e-email" type="email" required></label>
+      <label>Teléfono <input id="e-tel" required></label>
+      <button>Guardar empresa</button>
+    </form>
+    <table>
+      <thead><tr><th>Razón social</th><th>CUIT</th><th>Email</th><th>Teléfono</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="lista-empresas"></tbody>
+    </table>
+  </section>
+
+  <!-- ========== CONVENIOS ========== -->
+  <section>
+    <h2>Convenios</h2>
+    <form onsubmit="guardarConvenio(event)">
+      <input type="hidden" id="c-id">
+      <label>Empresa <select id="c-empresa" required></select></label>
+      <label>Tipo de facturación <input id="c-tipo" required></label>
+      <label>Condiciones <input id="c-cond" required></label>
+      <button>Guardar convenio</button>
+    </form>
+    <table>
+      <thead><tr><th>Empresa</th><th>Facturación</th><th>Condiciones</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="lista-convenios"></tbody>
+    </table>
+  </section>
+</main>
+
+<div id="aviso"></div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const csrf = document.querySelector("[name=csrfmiddlewaretoken]").value;
+let empresas = [], convenios = [];
+
+// Una sola función para hablar con la API (GET, POST, PATCH)
+async function pedir(url, metodo, datos) {
+  const resp = await fetch(url, {
+    method: metodo,
+    headers: { "Content-Type": "application/json", "X-CSRFToken": csrf },
+    body: datos ? JSON.stringify(datos) : undefined,
+  });
+  const json = await resp.json();
+  if (!resp.ok) throw new Error(Object.values(json).join(" "));  // errores de validación
+  return json;
+}
+
+// Cartel de confirmación (se oculta a los 3 segundos)
+function avisar(mensaje) {
+  $("aviso").textContent = mensaje;
+  $("aviso").style.display = "block";
+  setTimeout(() => ($("aviso").style.display = "none"), 3000);
+}
+
+// ---------- EMPRESAS ----------
+async function listarEmpresas() {                       // CONSULTA
+  empresas = await pedir("/api/empresas", "GET");
+  $("lista-empresas").innerHTML = empresas.map((e) => `
+    <tr class="${e.activo ? "" : "baja"}">
+      <td>${e.razon_social}</td><td>${e.cuit}</td><td>${e.email}</td><td>${e.telefono}</td>
+      <td>${e.activo ? "Activa" : "De baja"}</td>
+      <td>
+        <button class="gris" onclick="editarEmpresa(${e.id_empresa})">Editar</button>
+        <button onclick="bajaEmpresa(${e.id_empresa})">Dar de baja</button>
+      </td>
+    </tr>`).join("");
+  // El select de convenios solo muestra empresas activas
+  $("c-empresa").innerHTML = empresas.filter((e) => e.activo)
+    .map((e) => `<option value="${e.id_empresa}">${e.razon_social}</option>`).join("");
+}
+
+async function guardarEmpresa(ev) {                     // ALTA y MODIFICACIÓN
+  ev.preventDefault();
+  const id = $("e-id").value;
+  const datos = { razon_social: $("e-razon").value, cuit: $("e-cuit").value,
+                  email: $("e-email").value, telefono: $("e-tel").value };
+  try {
+    await pedir(id ? `/api/empresas/${id}` : "/api/empresas", id ? "PATCH" : "POST", datos);
+    avisar("Empresa guardada correctamente");
+    ev.target.reset(); $("e-id").value = "";
+    listarEmpresas();
+  } catch (error) { avisar(error.message); }
+}
+
+function editarEmpresa(id) {                            // carga el formulario para modificar
+  const e = empresas.find((x) => x.id_empresa === id);
+  $("e-id").value = id; $("e-razon").value = e.razon_social; $("e-cuit").value = e.cuit;
+  $("e-email").value = e.email; $("e-tel").value = e.telefono;
+}
+
+async function bajaEmpresa(id) {                        // BAJA (lógica: activo = false)
+  await pedir(`/api/empresas/${id}/desactivar`, "PATCH");
+  avisar("Empresa dada de baja");
+  listarEmpresas(); listarConvenios();
+}
+
+// ---------- CONVENIOS ----------
+async function listarConvenios() {                      // CONSULTA
+  convenios = await pedir("/api/convenios", "GET");
+  const nombre = (id) => empresas.find((e) => e.id_empresa === id)?.razon_social;
+  $("lista-convenios").innerHTML = convenios.map((c) => `
+    <tr class="${c.activo ? "" : "baja"}">
+      <td>${nombre(c.empresa)}</td><td>${c.tipo_facturacion}</td><td>${c.condiciones}</td>
+      <td>${c.activo ? "Activo" : "De baja"}</td>
+      <td>
+        <button class="gris" onclick="editarConvenio(${c.id_convenio})">Editar</button>
+        <button onclick="bajaConvenio(${c.id_convenio})">Dar de baja</button>
+      </td>
+    </tr>`).join("");
+}
+
+async function guardarConvenio(ev) {                    // ALTA y MODIFICACIÓN
+  ev.preventDefault();
+  const id = $("c-id").value;
+  const datos = { empresa: $("c-empresa").value, tipo_facturacion: $("c-tipo").value,
+                  condiciones: $("c-cond").value };
+  try {
+    await pedir(id ? `/api/convenios/${id}` : "/api/convenios", id ? "PATCH" : "POST", datos);
+    avisar("Convenio guardado correctamente");
+    ev.target.reset(); $("c-id").value = "";
+    listarConvenios();
+  } catch (error) { avisar(error.message); }
+}
+
+function editarConvenio(id) {
+  const c = convenios.find((x) => x.id_convenio === id);
+  $("c-id").value = id; $("c-empresa").value = c.empresa;
+  $("c-tipo").value = c.tipo_facturacion; $("c-cond").value = c.condiciones;
+}
+
+async function bajaConvenio(id) {                       // BAJA (lógica)
+  await pedir(`/api/convenios/${id}/desactivar`, "PATCH");
+  avisar("Convenio dado de baja");
+  listarConvenios();
+}
+
+// Al abrir la página: primero empresas, después convenios
+listarEmpresas().then(listarConvenios);
+</script>
+</body>
+</html>
