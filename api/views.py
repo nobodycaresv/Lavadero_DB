@@ -1,3 +1,4 @@
+from django.shortcuts import render
 from rest_framework import filters, viewsets
 
 from core.models import Empleado
@@ -17,3 +18,6 @@ class EmpleadoViewSet(viewsets.ModelViewSet):
         if rol:
             qs = qs.filter(rol__iexact=rol)
         return qs
+    
+def panel_gestion(request):
+    return render(request, 'api/gestion.html')

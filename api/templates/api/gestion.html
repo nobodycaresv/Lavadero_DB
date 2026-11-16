@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rosario Estética Vehicular - Gestión de Empleados</title>
+    <style>
+        :root {
+            --bg-black: #000000;
+            --card-dark: #121212;
+            --red-rosario: #BD201B;
+            --red-hover: #9c1916;
+            --text-white: #FFFFFF;
+            --text-gray: #C8C8C8;
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-white);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid var(--red-rosario);
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--text-white);
+            font-size: 28px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        p.subtitle {
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+
+        .card {
+            background-color: var(--card-dark);
+            border: 1px solid #333;
+            border-top: 2px solid var(--red-rosario);
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 10px rgba(189, 32, 27, 0.1);
+        }
+
+        h2 {
+            color: var(--text-white);
+            font-size: 20px;
+            font-style: italic;
+            margin-top: 0;
+            border-bottom: 1px solid #222;
+            padding-bottom: 10px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px 12px;
+            background-color: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: var(--text-white);
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--red-rosario);
+            box-shadow: 0 0 5px rgba(189, 32, 27, 0.5);
+        }
+
+        button {
+            background-color: var(--red-rosario);
+            color: var(--text-white);
+            border: none;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--red-hover);
+        }
+
+        .btn-secondary {
+            background-color: #444;
+            padding: 6px 12px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        .btn-danger {
+            background-color: var(--red-rosario);
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #222;
+        }
+
+        th {
+            background-color: #1a1a1a;
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+
+        td {
+            color: var(--text-white);
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Rosario Estética Vehicular</h1>
+            <p class="subtitle">Panel de Control y Gestión - Empleados</p>
+        </header>
+
+        <!-- Formulario para Empleados -->
+        <div class="card">
+            <h2>Empleados</h2>
+            <form id="form-empleado">
+                <input type="hidden" id="id_empleado">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="nombre">Nombre</label>
+                        <input type="text" id="nombre" required placeholder="Ej. Juan">
+                    </div>
+                    <div class="form-group">
+                        <label for="apellido">Apellido</label>
+                        <input type="text" id="apellido" required placeholder="Ej. Pérez">
+                    </div>
+                    <div class="form-group">
+                        <label for="rol">Rol</label>
+                        <select id="rol" required>
+                            <option value="Propietario">Propietario</option>
+                            <option value="gerente">Gerente</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="lavador">Lavador</option>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" id="btn-submit">Guardar empleado</button>
+            </form>
+
+            <!-- Tabla de Empleados -->
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-empleados">
+                    <tr>
+                        <td colspan="6" style="text-align: center;">Cargando empleados...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api/empleados/';
+        const form = document.getElementById('form-empleado');
+        const tabla = document.getElementById('tabla-empleados');
+        const btnSubmit = document.getElementById('btn-submit');
+
+        async function cargarEmpleados() {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            tabla.innerHTML = '';
+            if (data.length === 0) {
+                tabla.innerHTML = '<tr><td colspan="6" style="text-align: center;">No hay empleados registrados.</td></tr>';
+                return;
+            }
+            data.forEach(emp => {
+                tabla.innerHTML += `
+                    <tr>
+                        <td>${emp.id_empleado}</td>
+                        <td>${emp.nombre}</td>
+                        <td>${emp.apellido}</td>
+                        <td>${emp.rol}</td>
+                        <td>${emp.activo ? 'Activo' : 'Inactivo'}</td>
+                        <td>
+                            <button class="btn-secondary" onclick="prepararEdicion(${emp.id_empleado}, '${emp.nombre}', '${emp.apellido}', '${emp.rol}')">Editar</button>
+                            ${emp.activo ? `<button class="btn-danger" onclick="darDeBaja(${emp.id_empleado})">Dar de baja</button>` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('id_empleado').value;
+            const payload = {
+                nombre: document.getElementById('nombre').value,
+                apellido: document.getElementById('apellido').value,
+                rol: document.getElementById('rol').value,
+                activo: true
+            };
+
+            const url = id ? `${API_URL}${id}/` : API_URL;
+            const method = id ? 'PUT' : 'POST';
+
+            await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            form.reset();
+            document.getElementById('id_empleado').value = '';
+            btnSubmit.textContent = 'Guardar empleado';
+            cargarEmpleados();
+        });
+
+        function prepararEdicion(id, nombre, apellido, rol) {
+            document.getElementById('id_empleado').value = id;
+            document.getElementById('nombre').value = nombre;
+            document.getElementById('apellido').value = apellido;
+            document.getElementById('rol').value = rol;
+            btnSubmit.textContent = 'Actualizar empleado';
+        }
+
+        async function darDeBaja(id) {
+            await fetch(`${API_URL}${id}/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ activo: false })
+            });
+            cargarEmpleados();
+        }
+
+        cargarEmpleados();
+    </script>
+</body>
+</html>
