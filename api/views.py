@@ -3,7 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import Convenio, Empresa, Servicio
+from catalogos.models import Servicio
+from clientes.models import Convenio, Empresa
 
 from .serializers import ConvenioSerializer, EmpresaSerializer, ServicioSerializer
 
@@ -26,6 +27,7 @@ class ServicioViewSet(
     mixins.RetrieveModelMixin,
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     queryset = Servicio.objects.all().order_by("id_servicio")
