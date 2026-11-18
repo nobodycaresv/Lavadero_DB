@@ -1,6 +1,6 @@
 from rest_framework import serializers
-<<<<<<< HEAD
-from core.models import Estado, MedioPago
+from catalogos.models import Estado, Servicio
+from finanzas.models import MedioPago
 
 class EstadoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,18 +11,13 @@ class MedioPagoSerializer(serializers.ModelSerializer):
     class Meta:
         model = MedioPago
         fields = ["id_medio_pago", "nombre"]
-=======
-
-from catalogos.models import Servicio
-
 
 class ServicioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Servicio
-        fields = ["id_servicio", "nombre_servicio", "duracion", "precio", "activo"]
+        fields = ["id_servicio", "nombre_servicio", "duracion", "precio"]
         read_only_fields = ["id_servicio"]
         extra_kwargs = {
             "duracion": {"min_value": 1},
             "precio": {"min_value": 0},
-        } 
->>>>>>> 321c9615e00bfe9f1b5585bc4d4f155548942d22
+        }

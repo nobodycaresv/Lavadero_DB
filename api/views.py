@@ -1,6 +1,7 @@
 from rest_framework import filters, viewsets
 from django.shortcuts import render
-from core.models import Estado, MedioPago
+from catalogos.models import Estado
+from finanzas.models import MedioPago
 from .serializers import EstadoSerializer, MedioPagoSerializer
 
 class EstadoViewSet(viewsets.ModelViewSet):
