@@ -24,6 +24,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "core",
     "api",
+    "catalogos",
+    "clientes",
+    "insumos",
+    "operaciones",
+    "finanzas",
 ]
 if instalado("rest_framework"):
     INSTALLED_APPS.append("rest_framework")
@@ -88,3 +93,5 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+REST_FRAMEWORK = {"COERCE_DECIMAL_TO_STRING": False}
