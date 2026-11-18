@@ -1,12 +1,13 @@
 from rest_framework import serializers
 
-from core.models import Proveedor, Insumo
+from catalogos.models import Servicio
+from insumos.models import Insumo, Proveedor
 
 
 class ProveedorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Proveedor
-        fields = ["id_proveedor", "nombre", "telefono", "email"]
+        fields = ["id_proveedor", "nombre", "cuit", "telefono", "email"]
 
 
 def _decimal():
@@ -27,3 +28,15 @@ class InsumoSerializer(serializers.ModelSerializer):
             "id_insumo", "nombre", "unidad_medida",
             "stock_actual", "stock_minimo", "costo_unitario", "activo",
         ]
+
+
+class ServicioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Servicio
+        fields = ["id_servicio", "nombre_servicio", "duracion", "precio", "activo"]
+        read_only_fields = ["id_servicio"]
+        extra_kwargs = {
+            "duracion": {"min_value": 1},
+            "precio": {"min_value": 0},
+        }
+

@@ -1,20 +1,21 @@
 from django.db.models import ProtectedError
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, mixins, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import Proveedor, Insumo
+from catalogos.models import Servicio
+from insumos.models import Insumo, Proveedor
 
-from .serializers import ProveedorSerializer, InsumoSerializer
+from .serializers import (
+    InsumoSerializer,
+    ProveedorSerializer,
+    ServicioSerializer,
+)
 
 
 class EstadoAPIView(APIView):
-    """
-    Endpoint de ejemplo para confirmar que la API REST esta funcionando.
-
-    Prueben visitarlo desde el navegador en:
-        http://localhost:8000/api/estado/
-    """
+    """Endpoint de ejemplo para confirmar que la API REST esta funcionando."""
 
     def get(self, request):
         return Response(
@@ -65,3 +66,22 @@ class InsumoViewSet(viewsets.ModelViewSet):
     def perform_destroy(self, instance):
         instance.activo = False
         instance.save(update_fields=["activo"])
+
+
+class ServicioViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = Servicio.objects.all().order_by("id_servicio")
+    serializer_class = ServicioSerializer
+
+    @action(detail=True, methods=["patch"])
+    def desactivar(self, request, pk=None):
+        servicio = self.get_object()
+        servicio.activo = False
+        servicio.save(update_fields=["activo"])
+        return Response(self.get_serializer(servicio).data)

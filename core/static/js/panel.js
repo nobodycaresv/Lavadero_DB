@@ -8,6 +8,7 @@
       nombre: "proveedor",
       campos: [
         { clave: "nombre", etiqueta: "Nombre", tipo: "text" },
+        { clave: "cuit", etiqueta: "CUIT", tipo: "text" },
         { clave: "telefono", etiqueta: "Teléfono", tipo: "text" },
         { clave: "email", etiqueta: "Email", tipo: "email" }
       ]
