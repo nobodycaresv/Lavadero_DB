@@ -151,7 +151,7 @@
                     <label for="nombre-estado">Nombre del Estado:</label>
                     <input type="text" id="nombre-estado" required placeholder="Ej. Confirmado">
                 </div>
-                <button type="submit">Guardar Estado</button>
+                <button type="submit" id="btnGuardarEstado">Guardar Estado</button>
             </form>
         </div>
 
@@ -163,7 +163,7 @@
                     <label for="nombre-pago">Nombre del Medio de Pago:</label>
                     <input type="text" id="nombre-pago" required placeholder="Ej. Transferencia Bancaria">
                 </div>
-                <button type="submit">Guardar Medio de Pago</button>
+                <button type="submit" id="btnGuardarPago">Guardar Medio de Pago</button>
             </form>
         </div>
 
@@ -187,5 +187,83 @@
         </div>
     </div>
 
+    <script>
+        // Función para extraer el token CSRF de las cookies de Django
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrftoken = getCookie('csrftoken');
+
+            // --- GUARDAR ESTADO ---
+            const formEstado = document.getElementById('form-estado');
+            if (formEstado) {
+                formEstado.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const tipo = document.getElementById('tipo').value;
+                    const nombre = document.getElementById('nombre-estado').value;
+
+                    fetch('/api/estados/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        },
+                        body: JSON.stringify({ tipo: tipo, nombre: nombre })
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('¡Estado guardado con éxito!');
+                            location.reload();
+                        } else {
+                            alert('Error al guardar el estado.');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                });
+            }
+
+            // --- GUARDAR MEDIO DE PAGO ---
+            const formPago = document.getElementById('form-pago');
+            if (formPago) {
+                formPago.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const nombre = document.getElementById('nombre-pago').value;
+
+                    fetch('/api/medios-pago/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        },
+                        body: JSON.stringify({ nombre: nombre })
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('¡Medio de pago guardado con éxito!');
+                            location.reload();
+                        } else {
+                            alert('Error al guardar el medio de pago.');
+                        }
+                    })
+                    .catch(error => console.error('Error:', error));
+                });
+            }
+        });
+    </script>
 </body>
 </html>
