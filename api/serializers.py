@@ -32,8 +32,9 @@ class EmpresaSerializer(serializers.ModelSerializer):
             if existe:
                 raise serializers.ValidationError({"cuit": "Ya existe una empresa con este CUIT."})
 
-        if "telefono" in data and sum(c.isdigit() for c in data["telefono"]) < 6:
-            raise serializers.ValidationError({"telefono": "El teléfono debe tener al menos 6 dígitos."})
+        if "telefono" in data and sum(c.isdigit() for c in data["telefono"]) < 10:
+            raise serializers.ValidationError({"telefono": "El teléfono debe tener al menos 10 dígitos (código de área + número)."})
+
 
         return data
 
