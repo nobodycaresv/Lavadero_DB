@@ -24,6 +24,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "core",
     "api",
+    "catalogos",
+    "clientes",
+    "insumos",
+    "operaciones",
+    "finanzas",
 ]
 if instalado("rest_framework"):
     INSTALLED_APPS.append("rest_framework")

@@ -151,7 +151,6 @@
 <body>
 
     <header>
-        <!-- La etiqueta del logo usando los estáticos de Django -->
         <img src="{% static 'core/img/logo.jpg' %}" alt="Logo Rosario Estética Vehicular">
     </header>
 
@@ -163,7 +162,6 @@
             <input type="hidden" id="service-id">
             <input type="text" id="nombre" placeholder="Nombre del servicio (Ej. Tratamiento Acrílico)" required>
             <input type="number" id="precio" placeholder="Precio ($)" step="0.01" required>
-            <!-- Ajusté el campo para la duración obligatoria en tu modelo -->
             <input type="number" id="duracion" placeholder="Duración (Min)" required>
             <button type="submit">Guardar</button>
         </form>
@@ -178,7 +176,6 @@
                 </tr>
             </thead>
             <tbody id="services-table-body">
-                <!-- Se llenará dinámicamente -->
             </tbody>
         </table>
     </div>

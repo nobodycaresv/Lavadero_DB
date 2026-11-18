@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.models import Servicio
+from catalogos.models import Servicio
 
 
 class ServicioSerializer(serializers.ModelSerializer):
@@ -11,4 +11,4 @@ class ServicioSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             "duracion": {"min_value": 1},
             "precio": {"min_value": 0},
-        }
+        } 
