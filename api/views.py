@@ -9,7 +9,7 @@ class EstadoAPIView(APIView):
         return Response({"estado": "ok", "mensaje": "La API REST del proyecto esta funcionando correctamente."})
 
 class BajaLogicaViewSet(viewsets.ModelViewSet):
-    #CRUD base con baja lógica (activo=False)
+    #CRUD clase base con baja lógica (activo=False)
 
     filter_backends = [filters.SearchFilter]
 
@@ -22,7 +22,8 @@ class BajaLogicaViewSet(viewsets.ModelViewSet):
         instance.save(update_fields=["activo"])
 
 class ClienteViewSet(BajaLogicaViewSet):
-    queryset = Cliente.objects.prefetch_related("vehiculos").order_by("apellido", "nombre")
+    # define en la clase base que todos los clientes sean llamados por apellido y nombre
+    queryset = Cliente.objects.prefetch_related("vehiculos").order_by("apellido", "nombre") 
     serializer_class = ClienteSerializer
     search_fields = ["nombre", "apellido", "telefono", "email"]
 
@@ -31,6 +32,8 @@ class VehiculoViewSet(BajaLogicaViewSet):
     serializer_class = VehiculoSerializer
     search_fields = ["patente", "marca", "modelo"]
 
+    # esta funcion agrega un filtro extra para ver solo el vehiculo de un cliente en particular
+    # Por ejemplo api/vehiculos/?cliente=3
     def get_queryset(self):
         qs = super().get_queryset()
         cliente = self.request.query_params.get("cliente")  # ?cliente=3
