@@ -1,105 +1,67 @@
-# Base Docker + Django + PostgreSQL — Taller de Programación
+# Sistema de Gestión para Lavadero Vehicular (Backend Django)
 
-Proyecto Django ya generado y funcionando, listo para levantar con Docker y
-empezar a desarrollar el sistema de la organización asignada (Práctica
-Profesional) sin perder tiempo en la configuración inicial. Ya incluye
-Django REST Framework instalado y un endpoint de ejemplo, por si su
-organización necesita una API REST.
+Sistema backend desarrollado en **Django** para la gestión integral de un lavadero vehicular, cubriendo todo el ciclo operativo (Reservas, Recepción, Órdenes de Trabajo, Stock y Facturación).
 
-## Contenido
+## 🚀 Tecnologías utilizadas
+* **Python / Django** (Backend y ORM)
+* **PostgreSQL** (Base de datos relacional)
+* **Docker & Docker Compose** (Contenedorización y entorno reproducible)
 
-- `Dockerfile` → define la imagen del contenedor de Django.
-- `docker-compose.yml` → levanta dos servicios: `web` (Django) y `db` (Postgres).
-- `requirements.txt` → dependencias de Python.
-- `entrypoint.sh` → espera a la base de datos, aplica migraciones y arranca el servidor.
-- `.env.example` → variables de entorno de ejemplo (copiar como `.env`).
-- `manage.py`, `config/` → proyecto Django ya iniciado (`django-admin startproject`).
-- `core/` → app de ejemplo con una vista de inicio que confirma que el stack funciona.
-- `api/` → app de ejemplo con un endpoint REST (`/api/estado/`), lista para ampliar con los serializers y vistas de su organización.
+---
 
-## Primeros pasos
+## 📋 Requisitos previos
+Asegúrate de tener instalado en tu computadora:
+* [Docker](https://www.docker.com/) y Docker Compose.
+* Git.
 
-1. Copien `.env.example` como `.env` y ajusten el nombre de la base de datos y
-   usuario según el nombre de su organización (por ejemplo: `sabor_andino_db`).
+---
 
-2. Levanten los contenedores:
-   ```
-   docker compose up --build
-   ```
+## ⚙️ Configuración y Puesta en Marcha (Entorno Local)
 
-3. Abran en el navegador:
-   ```
-   http://localhost:8000
-   ```
-   Si ven la pantalla "Stack funcionando", Django se conectó correctamente a
-   Postgres y ya pueden empezar a trabajar.
+Sigue estos pasos para clonar y poner a marchar el proyecto en cualquier máquina local:
 
-4. Prueben también el endpoint de ejemplo de la API REST:
-   ```
-   http://localhost:8000/api/estado/
-   ```
-   Debería devolver un JSON simple confirmando que la API funciona.
+### 1. Clonar el repositorio
+```bash
+git clone [https://github.com/nobodycaresv/Lavadero_DB.git](https://github.com/nobodycaresv/Lavadero_DB.git)
+cd Lavadero_DB
 
-5. Para crear un superusuario (usuario admin de Django):
-   ```
-   docker compose exec web python manage.py createsuperuser
-   ```
-   Después entren a `http://localhost:8000/admin`.
+2. Configurar las variables de entorno
+Crea un archivo llamado .env en la raíz del proyecto basándote en la siguiente estructura local:
 
-6. Para entrar a una terminal dentro del contenedor (correr comandos de manage.py, instalar algo, etc.):
-   ```
-   docker compose exec web bash
-   ```
+Fragmento de código
+DB_NAME=lavadero_db
+DB_USER=postgres
+DB_PASSWORD=tu_password_local
+DB_HOST=db
+DB_PORT=5432
+DEBUG=1
+SECRET_KEY=tu-secret-key-super-segura
+3. Levantar los contenedores con Docker
+Ejecuta el siguiente comando para construir y encender tanto la base de datos PostgreSQL como el servidor de Django:
 
-7. Para crear una app nueva de Django (por ejemplo, la app principal de su sistema):
-   ```
-   docker compose exec web python manage.py startapp nombre_app
-   ```
-   No se olviden de agregarla a `INSTALLED_APPS` en `config/settings.py`.
+Bash
+docker compose up -d --build
+4. Aplicar migraciones y crear superusuario
+Una vez que los contenedores estén corriendo, inicializa las tablas en la base de datos local y crea tu usuario administrador:
 
-8. Para crear y aplicar migraciones después de modificar un modelo:
-   ```
-   docker compose exec web python manage.py makemigrations
-   docker compose exec web python manage.py migrate
-   ```
+Bash
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py createsuperuser
+🌐 Acceso al Sistema
+Una vez completados los pasos anteriores, podrás acceder a:
 
-9. Para apagar todo:
-   ```
-   docker compose down
-   ```
-   (Los datos de la base de datos NO se pierden: quedan en el volumen
-   `postgres_data`. Si quieren borrar todo desde cero, usen `docker compose down -v`).
+Panel de Administración: http://localhost:8000/admin
 
-## API REST (Django REST Framework)
+🔄 Flujo de Negocio Esperado
+Reserva: Registro inicial de turnos y vehículos.
 
-El proyecto ya trae `djangorestframework` instalado y configurado
-(`rest_framework` está en `INSTALLED_APPS`, con paginación básica en
-`REST_FRAMEWORK` dentro de `config/settings.py`). La app `api/` incluye un
-endpoint de ejemplo (`EstadoAPIView`) que pueden usar como modelo para los
-suyos.
+Recepción: Confección de fichas técnicas con el estado del vehículo.
 
-Para agregar un endpoint real sobre un modelo de su organización:
+Órdenes de Trabajo: Apertura y asignación del servicio.
 
-1. Definan el modelo en la app correspondiente (por ejemplo, `Cliente` en una
-   app `clientes`).
-2. Creen un archivo `serializers.py` en esa app, con una clase
-   `ClienteSerializer(serializers.ModelSerializer)`.
-3. Creen una vista (por ejemplo, `ClienteListView(generics.ListCreateAPIView)`)
-   que use ese serializer.
-4. Registren la ruta en `config/urls.py`, agrupada bajo `/api/`, por ejemplo:
-   `path('api/clientes/', include('clientes.urls'))`.
+Ejecución y Stock: Control de tiempos, empleados y descuento de insumos.
 
-## Adaptar a su proyecto
-
-- Cambien `POSTGRES_DB` / `POSTGRES_USER` / `POSTGRES_PASSWORD` en `.env` por
-  el nombre de su organización.
-- Reemplacen la vista de `core/views.py` y su template por las páginas reales
-  de su sistema, o creen apps nuevas para cada módulo (ver paso 7).
-- El código del proyecto vive montado en tiempo real: no hace falta
-  reconstruir la imagen cada vez que cambian un archivo `.py`, solo si
-  cambian `requirements.txt`.
-- Si agregan una librería nueva, súmenla a `requirements.txt` y reconstruyan
-  con `docker compose up --build`.
+Caja y Facturación: Cierre de cobros y emisión de pagos.
 
 ## Estructura del proyecto
 

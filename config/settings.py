@@ -24,6 +24,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "core",
     "api",
+    "catalogos",
+    "clientes",
+    "insumos",
+    "operaciones",
+    "finanzas",
 ]
 if instalado("rest_framework"):
     INSTALLED_APPS.append("rest_framework")
@@ -65,12 +70,11 @@ WSGI_APPLICATION = "config.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB", "lavadero_rosario_db"),
-        "USER": os.environ.get("POSTGRES_USER", "lavaderoSuper_user"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", ""),
-        "HOST": os.environ.get("DB_HOST", "db"),
-        "PORT": "5432",
-        "OPTIONS": {"sslmode": os.environ.get("DB_SSLMODE", "prefer")},
+        "NAME": os.environ.get("DB_NAME", os.environ.get("POSTGRES_DB", "lavadero_db")),
+        "USER": os.environ.get("DB_USER", os.environ.get("POSTGRES_USER", "postgres")),
+        "PASSWORD": os.environ.get("DB_PASSWORD", os.environ.get("POSTGRES_PASSWORD", "")),
+        "HOST": os.environ.get("DB_HOST") or "db",
+        "PORT": os.environ.get("DB_PORT") or os.environ.get("POSTGRES_PORT") or "5432",
     }
 }
 
@@ -89,3 +93,6 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+REST_FRAMEWORK = {"COERCE_DECIMAL_TO_STRING": False}
+LOGIN_URL = "login"

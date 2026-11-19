@@ -86,33 +86,37 @@
 </head>
 <body>
   <main class="card">
+    <form method="post" novalidate>
+    {% csrf_token %}
     <div class="logo-placeholder" aria-label="Logo Rosario">
       <strong>ROSARIO</strong>
       <span>ESTÉTICA VEHICULAR</span>
     </div>
 
     <h1>Iniciar sesión</h1>
+    {% if error %}<p style="color:#ff6b6b;text-align:center;margin:0 0 12px">{{ error }}</p>{% endif %}
     <p class="subtitle">Ingrese su correo y contraseña para continuar</p>
 
     <label for="correo">Correo electrónico</label>
     <div class="field">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
-      <input id="correo" type="email" placeholder="Ingresa tu correo" autocomplete="email">
+      <input id="correo" name="correo" type="email" required placeholder="Ingresa tu correo" autocomplete="email">
     </div>
 
     <label for="contrasena">Contraseña</label>
     <div class="field">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-      <input id="contrasena" type="password" placeholder="Ingresa tu contraseña" autocomplete="current-password">
+      <input id="contrasena" name="contrasena" type="password" required placeholder="Ingresa tu contraseña" autocomplete="current-password">
       <button class="eye" type="button" id="ojo" aria-label="Mostrar contraseña">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#AAAAAA" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 6.1A10 10 0 0 1 12 6c5 0 9 6 9 6a15 15 0 0 1-3.2 3.7M6.4 7.6A15 15 0 0 0 3 12s4 6 9 6c1.4 0 2.7-.4 3.8-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
       </button>
     </div>
 
-    <button class="btn" type="button">INGRESAR</button>
+    <button class="btn" type="submit">INGRESAR</button>
 
     <a class="link" href="#">¿Olvidaste tu contraseña?</a>
     <a class="link" href="#">¿No tienes cuenta aún? Regístrate</a>
+  </form>
   </main>
 
 <script>
