@@ -109,6 +109,29 @@
             background-color: var(--red-hover);
         }
 
+        .feedback-msg {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+            white-space: pre-line;
+        }
+
+        .feedback-error {
+            display: block;
+            background-color: rgba(189, 32, 27, 0.18);
+            border: 1px solid var(--red-rosario);
+            color: #ff9c99;
+        }
+
+        .feedback-ok {
+            display: block;
+            background-color: rgba(46, 160, 67, 0.18);
+            border: 1px solid #2ea043;
+            color: #9be9a8;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -142,9 +165,9 @@
         <!-- Formulario para Estados -->
         <div class="card">
             <h2>Registrar Nuevo Estado</h2>
-            <form id="form-estado">
+            <form id="form-estado" novalidate>
                 <div class="form-group">
-                    <label for="tipo">Ámbito / Tipo (turno, orden, pago, caja):</label>
+                    <label for="tipo">Ámbito / Tipo (turno, orden, pago):</label>
                     <input type="text" id="tipo" required placeholder="Ej. turno">
                 </div>
                 <div class="form-group">
@@ -153,21 +176,23 @@
                 </div>
                 <button type="submit" id="btnGuardarEstado">Guardar Estado</button>
             </form>
+            <div id="feedback-estado" class="feedback-msg"></div>
         </div>
 
         <!-- Formulario para Medios de Pago -->
         <div class="card">
             <h2>Registrar Medio de Pago</h2>
-            <form id="form-pago">
+            <form id="form-pago" novalidate>
                 <div class="form-group">
                     <label for="nombre-pago">Nombre del Medio de Pago:</label>
                     <input type="text" id="nombre-pago" required placeholder="Ej. Transferencia Bancaria">
                 </div>
                 <button type="submit" id="btnGuardarPago">Guardar Medio de Pago</button>
             </form>
+            <div id="feedback-pago" class="feedback-msg"></div>
         </div>
 
-        <!-- Listados rápidos -->
+        <!-- Listado de Estados -->
         <div class="card">
             <h2>Listado de Estados Actuales</h2>
             <table>
@@ -180,7 +205,25 @@
                 </thead>
                 <tbody id="tabla-estados">
                     <tr>
-                        <td colspan="3" style="text-align: center;">Panel con diseño corporativo institucional aplicado.</td>
+                        <td colspan="3" style="text-align: center;">Cargando estados...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Listado de Medios de Pago -->
+        <div class="card">
+            <h2>Listado de Medios de Pago Actuales</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-medios-pago">
+                    <tr>
+                        <td colspan="2" style="text-align: center;">Cargando medios de pago...</td>
                     </tr>
                 </tbody>
             </table>
@@ -188,7 +231,6 @@
     </div>
 
     <script>
-        // Función para extraer el token CSRF de las cookies de Django
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -204,63 +246,177 @@
             return cookieValue;
         }
 
+        const LABELS_CAMPOS = {
+            tipo: 'Ámbito / Tipo',
+            nombre: 'Nombre',
+            nombre_servicio: 'Nombre del servicio',
+            non_field_errors: 'Validación',
+            detail: 'Detalle'
+        };
+
+        function formatearErroresDRF(data, fallbackMsg) {
+            if (!data || typeof data !== 'object') {
+                return fallbackMsg;
+            }
+
+            const lineas = [];
+            for (const [campo, mensajes] of Object.entries(data)) {
+                const etiqueta = LABELS_CAMPOS[campo] || campo;
+                if (Array.isArray(mensajes)) {
+                    mensajes.forEach(msg => lineas.push(`• ${etiqueta}: ${msg}`));
+                } else if (typeof mensajes === 'string') {
+                    lineas.push(`• ${etiqueta}: ${mensajes}`);
+                } else if (mensajes && typeof mensajes === 'object') {
+                    lineas.push(`• ${etiqueta}: ${JSON.stringify(mensajes)}`);
+                }
+            }
+
+            return lineas.length > 0 ? lineas.join('\n') : fallbackMsg;
+        }
+
+        function mostrarFeedback(elementId, mensaje, esError) {
+            const box = document.getElementById(elementId);
+            if (!box) return;
+            box.textContent = mensaje;
+            box.className = 'feedback-msg ' + (esError ? 'feedback-error' : 'feedback-ok');
+        }
+
+        function cargarEstados() {
+            const tbody = document.getElementById('tabla-estados');
+            if (!tbody) return;
+
+            fetch('/api/estados/')
+                .then(res => res.ok ? res.json() : Promise.reject(res))
+                .then(data => {
+                    const lista = Array.isArray(data) ? data : (data.results || []);
+                    if (lista.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No hay estados cargados todavía.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = lista.map(item => `
+                        <tr>
+                            <td>${item.id_estado ?? item.id ?? ''}</td>
+                            <td>${item.tipo ?? ''}</td>
+                            <td>${item.nombre ?? ''}</td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(() => {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No se pudieron cargar los estados.</td></tr>';
+                });
+        }
+
+        function cargarMediosPago() {
+            const tbody = document.getElementById('tabla-medios-pago');
+            if (!tbody) return;
+
+            fetch('/api/medios-pago/')
+                .then(res => res.ok ? res.json() : Promise.reject(res))
+                .then(data => {
+                    const lista = Array.isArray(data) ? data : (data.results || []);
+                    if (lista.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="2" style="text-align: center;">No hay medios de pago cargados todavía.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = lista.map(item => `
+                        <tr>
+                            <td>${item.id_medio_pago ?? item.id ?? ''}</td>
+                            <td>${item.nombre ?? ''}</td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(() => {
+                    tbody.innerHTML = '<tr><td colspan="2" style="text-align: center;">No se pudieron cargar los medios de pago.</td></tr>';
+                });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const csrftoken = getCookie('csrftoken');
+            cargarEstados();
+            cargarMediosPago();
 
             // --- GUARDAR ESTADO ---
             const formEstado = document.getElementById('form-estado');
             if (formEstado) {
-                formEstado.addEventListener('submit', function(e) {
+                formEstado.addEventListener('submit', async function(e) {
                     e.preventDefault();
 
                     const tipo = document.getElementById('tipo').value;
                     const nombre = document.getElementById('nombre-estado').value;
 
-                    fetch('/api/estados/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrftoken
-                        },
-                        body: JSON.stringify({ tipo: tipo, nombre: nombre })
-                    })
-                    .then(response => {
+                    try {
+                        const response = await fetch('/api/estados/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrftoken || ''
+                            },
+                            body: JSON.stringify({ tipo: tipo, nombre: nombre })
+                        });
+
+                        const data = await response.json().catch(() => ({}));
+
                         if (response.ok) {
-                            alert('¡Estado guardado con éxito!');
-                            location.reload();
+                            mostrarFeedback('feedback-estado', '¡Estado guardado con éxito!', false);
+                            formEstado.reset();
+                            cargarEstados();
                         } else {
-                            alert('Error al guardar el estado.');
+                            const detalle = formatearErroresDRF(
+                                data,
+                                'No se pudo guardar el estado por datos inválidos.'
+                            );
+                            mostrarFeedback('feedback-estado', detalle, true);
                         }
-                    })
-                    .catch(error => console.error('Error:', error));
+                    } catch (error) {
+                        mostrarFeedback(
+                            'feedback-estado',
+                            'Error de conexión con el servidor al intentar guardar el estado.',
+                            true
+                        );
+                        console.error('Error:', error);
+                    }
                 });
             }
 
             // --- GUARDAR MEDIO DE PAGO ---
             const formPago = document.getElementById('form-pago');
             if (formPago) {
-                formPago.addEventListener('submit', function(e) {
+                formPago.addEventListener('submit', async function(e) {
                     e.preventDefault();
 
                     const nombre = document.getElementById('nombre-pago').value;
 
-                    fetch('/api/medios-pago/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrftoken
-                        },
-                        body: JSON.stringify({ nombre: nombre })
-                    })
-                    .then(response => {
+                    try {
+                        const response = await fetch('/api/medios-pago/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrftoken || ''
+                            },
+                            body: JSON.stringify({ nombre: nombre })
+                        });
+
+                        const data = await response.json().catch(() => ({}));
+
                         if (response.ok) {
-                            alert('¡Medio de pago guardado con éxito!');
-                            location.reload();
+                            mostrarFeedback('feedback-pago', '¡Medio de pago guardado con éxito!', false);
+                            formPago.reset();
+                            cargarMediosPago();
                         } else {
-                            alert('Error al guardar el medio de pago.');
+                            const detalle = formatearErroresDRF(
+                                data,
+                                'No se pudo guardar el medio de pago por datos inválidos.'
+                            );
+                            mostrarFeedback('feedback-pago', detalle, true);
                         }
-                    })
-                    .catch(error => console.error('Error:', error));
+                    } catch (error) {
+                        mostrarFeedback(
+                            'feedback-pago',
+                            'Error de conexión con el servidor al intentar guardar el medio de pago.',
+                            true
+                        );
+                        console.error('Error:', error);
+                    }
                 });
             }
         });
