@@ -64,6 +64,11 @@ header h1 span {
   font-weight: 600;
 }
 
+#btn-nuevo {
+  padding: 10px 20px;
+  font-size: 16px;
+}
+
 .btn-rojo:hover {
   background: var(--color-rojo-claro);
 }
