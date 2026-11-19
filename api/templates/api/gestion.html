@@ -173,7 +173,7 @@
                     </div>
                     <div class="form-group">
                         <label for="apellido">Apellido</label>
-                        <input type="text" id="apellido" required placeholder="Ej. Pérez">
+                        <input type="text" id="apellido" required placeholder="Ej. Ramírez">
                     </div>
                     <div class="form-group">
                         <label for="rol">Rol</label>
@@ -210,7 +210,7 @@
     </div>
 
     <script>
-        const API_URL = '/api/empleados/';
+        const API_URL = '/api/empleados';
         const form = document.getElementById('form-empleado');
         const tabla = document.getElementById('tabla-empleados');
         const btnSubmit = document.getElementById('btn-submit');
@@ -250,7 +250,7 @@
                 activo: true
             };
 
-            const url = id ? `${API_URL}${id}/` : API_URL;
+            const url = id ? `${API_URL}/${id}` : API_URL;
             const method = id ? 'PUT' : 'POST';
 
             await fetch(url, {
@@ -274,7 +274,7 @@
         }
 
         async function darDeBaja(id) {
-            await fetch(`${API_URL}${id}/`, {
+            await fetch(`${API_URL}/${id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ activo: false })

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from core.models import Servicio
+from catalogos.models import Empleado, Servicio
 
 
 class ServicioSerializer(serializers.ModelSerializer):
@@ -13,11 +13,9 @@ class ServicioSerializer(serializers.ModelSerializer):
             "precio": {"min_value": 0},
         }
 
-from rest_framework import serializers
-
-from core.models import Empleado
 
 class EmpleadoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Empleado
         fields = ["id_empleado", "nombre", "apellido", "rol", "activo"]
+        read_only_fields = ["id_empleado"]
