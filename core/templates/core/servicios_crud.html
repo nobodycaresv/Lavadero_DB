@@ -1,0 +1,326 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRUD Servicios - Rosario Estética Vehicular</title>
+    <style>
+        /* Paleta de Colores Institucional */
+        :root {
+            --negro-institucional: #000000;
+            --rojo-rosario: #BD201B;
+            --blanco: #FFFFFF;
+            --gris-metalico: #C8C8C8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--negro-institucional);
+            color: var(--blanco);
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Encabezado con Logo */
+        header {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 3px solid var(--rojo-rosario);
+            background-color: #0a0a0a;
+        }
+
+        header img {
+            max-height: 120px;
+            object-fit: contain;
+        }
+
+        /* Contenedor Principal */
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 30px;
+            background-color: #111111;
+            border: 1px solid var(--gris-metalico);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(189, 32, 27, 0.15);
+        }
+
+        h1 {
+            color: var(--rojo-rosario);
+            text-align: center;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Formulario */
+        .form-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        input[type="text"], input[type="number"] {
+            flex: 1;
+            padding: 12px;
+            background-color: var(--negro-institucional);
+            border: 1px solid var(--gris-metalico);
+            color: var(--blanco);
+            border-radius: 10px;
+            font-size: 16px;
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: var(--rojo-rosario);
+        }
+
+        /* Botones */
+        button {
+            padding: 12px 24px;
+            background-color: var(--rojo-rosario);
+            color: var(--blanco);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #9a1a16;
+        }
+
+        .btn-edit {
+            background-color: var(--gris-metalico);
+            color: var(--negro-institucional);
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .btn-edit:hover {
+            background-color: #a8a8a8;
+        }
+
+        .btn-delete {
+            background-color: transparent;
+            color: var(--rojo-rosario);
+            border: 1px solid var(--rojo-rosario);
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .btn-delete:hover {
+            background-color: var(--rojo-rosario);
+            color: var(--blanco);
+        }
+
+        .btn-activate {
+            background-color: transparent;
+            color: var(--gris-metalico);
+            border: 1px solid var(--gris-metalico);
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .btn-activate:hover {
+            background-color: var(--gris-metalico);
+            color: var(--negro-institucional);
+        }
+
+        .row-inactive td {
+            opacity: 0.55;
+        }
+
+        /* Tabla de Servicios */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #333333;
+        }
+
+        th {
+            color: var(--gris-metalico);
+            font-weight: bold;
+            border-bottom: 2px solid var(--rojo-rosario);
+            text-transform: uppercase;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background-color: #1a1a1a;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header style="display:flex;align-items:center;justify-content:space-between;padding:16px 40px;">
+        <img src="{% static 'core/img/logo.jpg' %}" alt="Logo Rosario Estética Vehicular" style="max-height:75px;">
+        <nav style="display:flex;gap:12px;">
+            <a href="{% url 'home' %}" style="color:#FFFFFF;text-decoration:none;padding:8px 14px;border:1px solid #C8C8C8;border-radius:6px;font-weight:bold;font-size:14px;">Ver Web Pública</a>
+            <a href="/admin/" style="color:#FFFFFF;text-decoration:none;padding:8px 14px;border:1px solid #BD201B;border-radius:6px;font-weight:bold;font-size:14px;">Admin</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h1>Gestión de Servicios</h1>
+
+        <form id="service-form" class="form-group">
+            {% csrf_token %}
+            <input type="hidden" id="service-id">
+            <input type="hidden" id="service-activo" value="true">
+            <input type="text" id="nombre" placeholder="Nombre del servicio (Ej. Tratamiento Acrílico)" required>
+            <input type="number" id="precio" placeholder="Precio ($)" step="0.01" required>
+            <input type="number" id="duracion" placeholder="Duración (Min)" required>
+            <button type="submit">Guardar</button>
+        </form>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Servicio</th>
+                    <th>Duración</th>
+                    <th>Precio</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="services-table-body">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_URL = '/api/servicios';
+        let serviciosCache = [];
+
+        function getCsrfToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value;
+        }
+
+        async function cargarServicios() {
+            try {
+                const res = await fetch(API_URL);
+                const servicios = await res.json();
+                serviciosCache = servicios.sort((a, b) => b.id_servicio - a.id_servicio);
+                const tbody = document.getElementById('services-table-body');
+                tbody.innerHTML = '';
+
+                serviciosCache.forEach(s => {
+                    const rowClass = s.activo ? '' : 'row-inactive';
+                    const nombreEscapado = JSON.stringify(s.nombre_servicio);
+                    const toggleBtn = s.activo
+                        ? `<button type="button" onclick="cambiarActivo(${s.id_servicio}, false)" class="btn-delete">Eliminar</button>`
+                        : `<button type="button" onclick="cambiarActivo(${s.id_servicio}, true)" class="btn-activate">Activar</button>`;
+
+                    tbody.innerHTML += `
+                        <tr class="${rowClass}">
+                            <td>${s.nombre_servicio}</td>
+                            <td>${s.duracion} min</td>
+                            <td>$${s.precio}</td>
+                            <td class="actions">
+                                <button type="button" onclick="editar(${s.id_servicio}, ${nombreEscapado}, ${s.precio}, ${s.duracion}, ${s.activo})" class="btn-edit">Editar</button>
+                                ${toggleBtn}
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error cargando los servicios:", error);
+            }
+        }
+
+        document.getElementById('service-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = document.getElementById('service-id').value;
+            const activo = document.getElementById('service-activo').value === 'true';
+            const nombre_servicio = document.getElementById('nombre').value;
+            const precio = parseFloat(document.getElementById('precio').value);
+            const duracion = parseInt(document.getElementById('duracion').value);
+
+            const method = id ? 'PUT' : 'POST';
+            const url = id ? `${API_URL}/${id}` : API_URL;
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ nombre_servicio, precio, duracion, activo })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    alert("Error del servidor: " + errorData);
+                    return;
+                }
+
+                e.target.reset();
+                document.getElementById('service-id').value = '';
+                document.getElementById('service-activo').value = 'true';
+                cargarServicios();
+            } catch (error) {
+                alert("Error al comunicarse con la API.");
+            }
+        });
+
+        async function cambiarActivo(id, nuevoEstado) {
+            const servicio = serviciosCache.find(item => item.id_servicio === id);
+            if (!servicio) return;
+
+            const mensajeConfirmacion = nuevoEstado
+                ? '¿Querés volver a activar este servicio para que aparezca en las vistas?'
+                : '¿Querés desactivar este servicio? No se borrará de la base de datos, pero dejará de mostrarse en las vistas.';
+
+            if (!confirm(mensajeConfirmacion)) return;
+
+            try {
+                const response = await fetch(`${API_URL}/${id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken()
+                    },
+                    body: JSON.stringify({ activo: nuevoEstado })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    alert("No se pudo actualizar el estado del servicio: " + errorData);
+                    return;
+                }
+
+                cargarServicios();
+            } catch (error) {
+                console.error(error);
+                alert("Error al comunicarse con la API.");
+            }
+        }
+
+        function editar(id, nombre, precio, duracion, activo) {
+            document.getElementById('service-id').value = id;
+            document.getElementById('service-activo').value = String(activo);
+            document.getElementById('nombre').value = nombre;
+            document.getElementById('precio').value = precio;
+            document.getElementById('duracion').value = duracion;
+        }
+
+        cargarServicios();
+    </script>
+</body>
+</html>
