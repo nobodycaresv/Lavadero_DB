@@ -15,26 +15,26 @@
     <aside>
         <img class="logo" src="{% static 'core/img/logo.jpg' %}" alt="Rosario Estética Vehicular">
         <nav>
-            <a href="/panel/" class="{% if request.path == '/panel/' %}activo{% endif %}"><svg><use href="#i-home"/></svg>Inicio</a>
+            <a href="/panel/"><svg><use href="#i-home"/></svg>Inicio</a>
             <div class="grupo">Operación</div>
-            <a href="/panel/turnos/" class="{% if '/panel/turnos/' in request.path %}activo{% endif %}"><svg><use href="#i-turnos"/></svg>Turnos</a>
-            <a href="/panel/fichas/" class="{% if '/panel/fichas/' in request.path %}activo{% endif %}"><svg><use href="#i-fichas"/></svg>Fichas técnicas</a>
-            <a href="/panel/ordenes/" class="{% if '/panel/ordenes/' in request.path %}activo{% endif %}"><svg><use href="#i-ordenes"/></svg>Órdenes de trabajo</a>
+            <a href="/panel/turnos/"><svg><use href="#i-turnos"/></svg>Turnos</a>
+            <a href="/panel/fichas/"><svg><use href="#i-fichas"/></svg>Fichas técnicas</a>
+            <a href="/panel/ordenes/"><svg><use href="#i-ordenes"/></svg>Órdenes de trabajo</a>
             <div class="grupo">Cobros</div>
-            <a href="/panel/facturas/" class="{% if '/panel/facturas/' in request.path %}activo{% endif %}"><svg><use href="#i-facturas"/></svg>Facturas</a>
-            <a href="/panel/pagos/" class="{% if '/panel/pagos/' in request.path %}activo{% endif %}"><svg><use href="#i-pagos"/></svg>Pagos y recuento</a>
+            <a href="/panel/facturas/"><svg><use href="#i-facturas"/></svg>Facturas</a>
+            <a href="/panel/pagos/"><svg><use href="#i-pagos"/></svg>Pagos y recuento</a>
             <div class="grupo">Clientes</div>
-            <a href="/panel/clientes/" class="{% if '/panel/clientes/' in request.path %}activo{% endif %}"><svg><use href="#i-clientes"/></svg>Clientes y vehículos</a>
-            <a href="/panel/empresas/" class="{% if '/panel/empresas/' in request.path %}activo{% endif %}"><svg><use href="#i-empresas"/></svg>Empresas y convenios</a>
+            <a href="/panel/clientes/"><svg><use href="#i-clientes"/></svg>Clientes y vehículos</a>
+            <a href="/panel/empresas/"><svg><use href="#i-empresas"/></svg>Empresas y convenios</a>
             <div class="grupo">Insumos</div>
-            <a href="/panel/insumos/" class="{% if '/panel/insumos/' in request.path %}activo{% endif %}"><svg><use href="#i-insumos"/></svg>Insumos y stock</a>
-            <a href="/panel/proveedores/" class="{% if '/panel/proveedores/' in request.path %}activo{% endif %}"><svg><use href="#i-proveedores"/></svg>Proveedores</a>
-            <a href="/panel/compras/" class="{% if '/panel/compras/' in request.path %}activo{% endif %}"><svg><use href="#i-compras"/></svg>Compras</a>
+            <a href="/panel/insumos/"><svg><use href="#i-insumos"/></svg>Insumos y stock</a>
+            <a href="/panel/proveedores/"><svg><use href="#i-proveedores"/></svg>Proveedores</a>
+            <a href="/panel/compras/"><svg><use href="#i-compras"/></svg>Compras</a>
             <div class="grupo">Configuración</div>
-            <a href="/panel/servicios/" class="{% if '/panel/servicios/' in request.path %}activo{% endif %}"><svg><use href="#i-servicios"/></svg>Servicios</a>
-            <a href="/panel/empleados/" class="{% if '/panel/empleados/' in request.path %}activo{% endif %}"><svg><use href="#i-empleados"/></svg>Empleados</a>
-            <a href="/panel/estados/" class="{% if '/panel/estados/' in request.path %}activo{% endif %}"><svg><use href="#i-estados"/></svg>Estados</a>
-            <a href="/panel/medios-pago/" class="{% if '/panel/medios-pago/' in request.path %}activo{% endif %}"><svg><use href="#i-medios"/></svg>Medios de pago</a>
+            <a href="/panel/servicios/"><svg><use href="#i-servicios"/></svg>Servicios</a>
+            <a href="/panel/empleados/"><svg><use href="#i-empleados"/></svg>Empleados</a>
+            <a href="/panel/estados/"><svg><use href="#i-estados"/></svg>Estados</a>
+            <a href="/panel/medios-pago/"><svg><use href="#i-medios"/></svg>Medios de pago</a>
             <div class="grupo">Otros</div>
             <a href="{% url 'home' %}"><svg><use href="#i-web"/></svg>Ver web pública</a>
             <a href="/admin/"><svg><use href="#i-admin"/></svg>Admin Django</a>

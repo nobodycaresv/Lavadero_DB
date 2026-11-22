@@ -56,3 +56,8 @@ document.querySelectorAll('[data-contar]').forEach(el => {
     }
     requestAnimationFrame(paso);
 });
+
+// Marca en el menú el link de la página actual.
+document.querySelectorAll('aside a').forEach(a => {
+    if (a.pathname === location.pathname) a.classList.add('activo');
+});

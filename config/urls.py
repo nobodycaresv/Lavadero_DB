@@ -8,10 +8,10 @@ urlpatterns = [
     path("api/", include("api.urls")),
     path("", core_views.home, name="home"),
 
-    # Link viejo del home: ahora redirige al panel
+    # Link viejo del home: redirige al panel
     path("servicios/", RedirectView.as_view(url="/panel/servicios/"), name="crud_servicios"),
 
-    # Panel de gestión (cada pantalla nueva suma UNA línea acá)
+    # Panel: /panel/ es el inicio; /panel/<nombre>/ muestra core/panel/<nombre>.html
     path("panel/", core_views.panel_inicio, name="panel_inicio"),
-    path("panel/servicios/", core_views.panel_servicios, name="panel_servicios"),
+    path("panel/<slug:pagina>/", core_views.panel_pagina, name="panel_pagina"),
 ]

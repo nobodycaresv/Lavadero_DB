@@ -1,6 +1,8 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import F, Sum
+from django.http import Http404
 from django.shortcuts import render
+from django.template import TemplateDoesNotExist
 from django.utils import timezone
 
 from catalogos.models import Servicio
@@ -25,6 +27,10 @@ def panel_inicio(request):
     return render(request, "core/panel/inicio.html", contexto)
 
 
+# Sirve cualquier pantalla del panel: /panel/clientes/ -> core/panel/clientes.html
 @staff_member_required(login_url="/admin/login/")
-def panel_servicios(request):
-    return render(request, "core/panel/servicios.html")
+def panel_pagina(request, pagina):
+    try:
+        return render(request, f"core/panel/{pagina}.html")
+    except TemplateDoesNotExist:
+        raise Http404
