@@ -4,9 +4,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from catalogos.models import Servicio
-from clientes.models import Convenio, Empresa
 
-from .serializers import ConvenioSerializer, EmpresaSerializer, ServicioSerializer
+from .serializers import ServicioSerializer
 
 
 class EstadoAPIView(APIView):
@@ -39,41 +38,3 @@ class ServicioViewSet(
         servicio.activo = False
         servicio.save(update_fields=["activo"])
         return Response(self.get_serializer(servicio).data)
-
-
-class EmpresaViewSet(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.CreateModelMixin,
-    mixins.UpdateModelMixin,
-    viewsets.GenericViewSet,
-):
-    queryset = Empresa.objects.all().order_by("id_empresa")
-    serializer_class = EmpresaSerializer
-
-    @action(detail=True, methods=["patch"])
-    def desactivar(self, request, pk=None):
-        empresa = self.get_object()
-        empresa.activo = False
-        empresa.save(update_fields=["activo"])
-        # Al dar de baja la empresa, también se dan de baja sus convenios
-        Convenio.objects.filter(empresa=empresa).update(activo=False)
-        return Response(self.get_serializer(empresa).data)
-
-
-class ConvenioViewSet(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.CreateModelMixin,
-    mixins.UpdateModelMixin,
-    viewsets.GenericViewSet,
-):
-    queryset = Convenio.objects.select_related("empresa").order_by("id_convenio")
-    serializer_class = ConvenioSerializer
-
-    @action(detail=True, methods=["patch"])
-    def desactivar(self, request, pk=None):
-        convenio = self.get_object()
-        convenio.activo = False
-        convenio.save(update_fields=["activo"])
-        return Response(self.get_serializer(convenio).data)
