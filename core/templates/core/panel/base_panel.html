@@ -1,0 +1,53 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titulo %}Panel{% endblock %} - Rosario Estética Vehicular</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'core/css/panel.css' %}">
+    {% block estilos %}{% endblock %}
+</head>
+<body>
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol><symbol id="i-turnos" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></symbol><symbol id="i-fichas" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h6"/></symbol><symbol id="i-ordenes" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></symbol><symbol id="i-facturas" viewBox="0 0 24 24"><path d="M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol><symbol id="i-pagos" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M15 9.5c0-1-1.3-1.5-3-1.5s-3 .7-3 1.8 1.3 1.5 3 1.9 3 .8 3 1.9-1.3 1.9-3 1.9-3-.5-3-1.5"/></symbol><symbol id="i-clientes" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5c2.2.6 3.5 2.4 3.5 5"/></symbol><symbol id="i-empresas" viewBox="0 0 24 24"><rect x="4" y="3" width="10" height="18" rx="1"/><path d="M14 9h6v12h-6M8 7h2M8 11h2M8 15h2"/></symbol><symbol id="i-insumos" viewBox="0 0 24 24"><path d="M21 8l-9-5-9 5v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></symbol><symbol id="i-proveedores" viewBox="0 0 24 24"><path d="M2 6h11v10H2zM13 9h4l4 4v3h-8"/><circle cx="6" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></symbol><symbol id="i-compras" viewBox="0 0 24 24"><path d="M3 4h3l2.5 11h10l2-8H7"/><circle cx="10" cy="19.5" r="1.5"/><circle cx="17" cy="19.5" r="1.5"/></symbol><symbol id="i-servicios" viewBox="0 0 24 24"><path d="M4 15l1.5-5A2 2 0 0 1 7.4 8.5h9.2a2 2 0 0 1 1.9 1.5L20 15v4h-3v-2H7v2H4z"/><circle cx="7.5" cy="13.5" r=".8"/><circle cx="16.5" cy="13.5" r=".8"/></symbol><symbol id="i-empleados" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 16c.5-1.7 1.7-2.5 3-2.5s2.5.8 3 2.5M14 10h4M14 14h4"/></symbol><symbol id="i-estados" viewBox="0 0 24 24"><path d="M3 12V3h9l9 9-9 9z"/><circle cx="7.5" cy="7.5" r="1.2"/></symbol><symbol id="i-medios" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2"/><path d="M2.5 10h19M6 15h4"/></symbol><symbol id="i-web" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></symbol><symbol id="i-admin" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></symbol></svg>
+    <aside>
+        <img class="logo" src="{% static 'core/img/logo.jpg' %}" alt="Rosario Estética Vehicular">
+        <nav>
+            <a href="/panel/" class="{% if request.path == '/panel/' %}activo{% endif %}"><svg><use href="#i-home"/></svg>Inicio</a>
+            <div class="grupo">Operación</div>
+            <a href="/panel/turnos/" class="{% if '/panel/turnos/' in request.path %}activo{% endif %}"><svg><use href="#i-turnos"/></svg>Turnos</a>
+            <a href="/panel/fichas/" class="{% if '/panel/fichas/' in request.path %}activo{% endif %}"><svg><use href="#i-fichas"/></svg>Fichas técnicas</a>
+            <a href="/panel/ordenes/" class="{% if '/panel/ordenes/' in request.path %}activo{% endif %}"><svg><use href="#i-ordenes"/></svg>Órdenes de trabajo</a>
+            <div class="grupo">Cobros</div>
+            <a href="/panel/facturas/" class="{% if '/panel/facturas/' in request.path %}activo{% endif %}"><svg><use href="#i-facturas"/></svg>Facturas</a>
+            <a href="/panel/pagos/" class="{% if '/panel/pagos/' in request.path %}activo{% endif %}"><svg><use href="#i-pagos"/></svg>Pagos y recuento</a>
+            <div class="grupo">Clientes</div>
+            <a href="/panel/clientes/" class="{% if '/panel/clientes/' in request.path %}activo{% endif %}"><svg><use href="#i-clientes"/></svg>Clientes y vehículos</a>
+            <a href="/panel/empresas/" class="{% if '/panel/empresas/' in request.path %}activo{% endif %}"><svg><use href="#i-empresas"/></svg>Empresas y convenios</a>
+            <div class="grupo">Insumos</div>
+            <a href="/panel/insumos/" class="{% if '/panel/insumos/' in request.path %}activo{% endif %}"><svg><use href="#i-insumos"/></svg>Insumos y stock</a>
+            <a href="/panel/proveedores/" class="{% if '/panel/proveedores/' in request.path %}activo{% endif %}"><svg><use href="#i-proveedores"/></svg>Proveedores</a>
+            <a href="/panel/compras/" class="{% if '/panel/compras/' in request.path %}activo{% endif %}"><svg><use href="#i-compras"/></svg>Compras</a>
+            <div class="grupo">Configuración</div>
+            <a href="/panel/servicios/" class="{% if '/panel/servicios/' in request.path %}activo{% endif %}"><svg><use href="#i-servicios"/></svg>Servicios</a>
+            <a href="/panel/empleados/" class="{% if '/panel/empleados/' in request.path %}activo{% endif %}"><svg><use href="#i-empleados"/></svg>Empleados</a>
+            <a href="/panel/estados/" class="{% if '/panel/estados/' in request.path %}activo{% endif %}"><svg><use href="#i-estados"/></svg>Estados</a>
+            <a href="/panel/medios-pago/" class="{% if '/panel/medios-pago/' in request.path %}activo{% endif %}"><svg><use href="#i-medios"/></svg>Medios de pago</a>
+            <div class="grupo">Otros</div>
+            <a href="{% url 'home' %}"><svg><use href="#i-web"/></svg>Ver web pública</a>
+            <a href="/admin/"><svg><use href="#i-admin"/></svg>Admin Django</a>
+        </nav>
+    </aside>
+
+    <main>
+        {% csrf_token %}
+        <h1>{% block encabezado %}{% endblock %}</h1>
+        {% block contenido %}{% endblock %}
+    </main>
+
+    <script src="{% static 'core/js/panel.js' %}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
