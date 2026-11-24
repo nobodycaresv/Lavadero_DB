@@ -1,11 +1,11 @@
-from rest_framework import filters, mixins, status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from clientes.models import Cliente, Vehiculo
+from catalogos.models import Servicio
 
-from .serializers import ClienteSerializer, ServicioSerializer, VehiculoSerializer
+from .serializers import ServicioSerializer
 
 
 class EstadoAPIView(APIView):
@@ -13,39 +13,28 @@ class EstadoAPIView(APIView):
 
     def get(self, request):
         return Response(
-            {"estado": "ok", "mensaje": "La API REST del proyecto esta funcionando correctamente."},
+            {
+                "estado": "ok",
+                "mensaje": "La API REST del proyecto esta funcionando correctamente.",
+            },
             status=status.HTTP_200_OK,
         )
 
 
-class BajaLogicaViewSet(viewsets.ModelViewSet):
-    """CRUD base con baja lógica (activo=False)."""
+class ServicioViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = Servicio.objects.all().order_by("id_servicio")
+    serializer_class = ServicioSerializer
 
-    filter_backends = [filters.SearchFilter]
-
-    def get_queryset(self):
-        # si no viene ?activo=false, devuelve solo los activos
-        activo = self.request.query_params.get("activo", "true").lower() != "false"
-        return self.queryset.filter(activo=activo)
-
-    def perform_destroy(self, instance):
-        # el DELETE solo marca como inactivo, no borra de la base
-        instance.activo = False
-        instance.save(update_fields=["activo"])
-
-
-class ClienteViewSet(BajaLogicaViewSet):
-    queryset = Cliente.objects.prefetch_related("vehiculos").order_by("apellido", "nombre")
-    serializer_class = ClienteSerializer
-    search_fields = ["nombre", "apellido", "telefono", "email"]
-
-
-class VehiculoViewSet(BajaLogicaViewSet):
-    queryset = Vehiculo.objects.select_related("cliente").order_by("patente")
-    serializer_class = VehiculoSerializer
-    search_fields = ["patente", "marca", "modelo"]
-
-    def get_queryset(self):
-        qs = super().get_queryset()
-        cliente = self.request.query_params.get("cliente")  # ej: /api/vehiculos/?cliente=3
-        return qs.filter(cliente_id=cliente) if cliente else qs
+    @action(detail=True, methods=["patch"])
+    def desactivar(self, request, pk=None):
+        servicio = self.get_object()
+        servicio.activo = False
+        servicio.save(update_fields=["activo"])
+        return Response(self.get_serializer(servicio).data)

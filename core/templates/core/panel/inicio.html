@@ -1,0 +1,21 @@
+{% extends "core/panel/base_panel.html" %}
+{% block titulo %}Inicio{% endblock %}
+{% block encabezado %}Panel de gestión{% endblock %}
+
+{% block contenido %}
+<div class="resumen">
+    <div class="dato"><span>Turnos de hoy</span><strong data-contar="{{ turnos_hoy }}">{{ turnos_hoy }}</strong></div>
+    <div class="dato"><span>Cobrado hoy</span><strong data-contar="{{ cobrado_hoy|floatformat:0 }}" data-prefijo="$">${{ cobrado_hoy|floatformat:0 }}</strong></div>
+    <div class="dato"><span>Insumos con stock bajo</span><strong data-contar="{{ stock_bajo }}">{{ stock_bajo }}</strong></div>
+</div>
+
+<p class="subtitulo">Accesos rápidos</p>
+<div class="accesos">
+    <a href="/panel/turnos/"><svg><use href="#i-turnos"/></svg>Turnos</a>
+    <a href="/panel/ordenes/"><svg><use href="#i-ordenes"/></svg>Órdenes de trabajo</a>
+    <a href="/panel/pagos/"><svg><use href="#i-pagos"/></svg>Pagos y recuento</a>
+    <a href="/panel/clientes/"><svg><use href="#i-clientes"/></svg>Clientes y vehículos</a>
+    <a href="/panel/insumos/"><svg><use href="#i-insumos"/></svg>Insumos y stock</a>
+    <a href="/panel/servicios/"><svg><use href="#i-servicios"/></svg>Servicios</a>
+</div>
+{% endblock %}

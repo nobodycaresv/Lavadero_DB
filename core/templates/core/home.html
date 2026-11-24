@@ -2,287 +2,259 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRUD Servicios - Rosario Estética Vehicular</title>
-    <style>
-        /* Paleta de Colores Institucional */
-        :root {
-            --negro-institucional: #000000;
-            --rojo-rosario: #BD201B;
-            --blanco: #FFFFFF;
-            --gris-metalico: #C8C8C8;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rosario — Estética Vehicular</title>
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--negro-institucional);
-            color: var(--blanco);
-            margin: 0;
-            padding: 0;
-        }
-
-        /* Encabezado con Logo */
-        header {
-            text-align: center;
-            padding: 20px;
-            border-bottom: 3px solid var(--rojo-rosario);
-            background-color: #0a0a0a; /* Ligero contraste para dar profundidad */
-        }
-
-        header img {
-            max-height: 120px;
-            object-fit: contain;
-        }
-
-        /* Contenedor Principal */
-        .container {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 30px;
-            background-color: #111111;
-            border: 1px solid var(--gris-metalico);
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(189, 32, 27, 0.15); /* Sutil resplandor rojo */
-        }
-
-        h1 {
-            color: var(--rojo-rosario);
-            text-align: center;
-            margin-bottom: 30px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* Formulario */
-        .form-group {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-
-        input[type="text"], input[type="number"] {
-            flex: 1;
-            padding: 12px;
-            background-color: var(--negro-institucional);
-            border: 1px solid var(--gris-metalico);
-            color: var(--blanco);
-            border-radius: 10px;
-            font-size: 16px;
-        }
-
-        input[type="text"]:focus, input[type="number"]:focus {
-            outline: none;
-            border-color: var(--rojo-rosario);
-        }
-
-        /* Botones */
-        button {
-            padding: 12px 24px;
-            background-color: var(--rojo-rosario);
-            color: var(--blanco);
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 16px;
-            transition: background-color 0.3s;
-        }
-
-        button:hover {
-            background-color: #9a1a16;
-        }
-
-        .btn-edit {
-            background-color: var(--gris-metalico);
-            color: var(--negro-institucional);
-            padding: 8px 16px;
-            font-size: 14px;
-        }
-
-        .btn-edit:hover {
-            background-color: #a8a8a8;
-        }
-
-        .btn-delete {
-            background-color: transparent;
-            color: var(--rojo-rosario);
-            border: 1px solid var(--rojo-rosario);
-            padding: 8px 16px;
-            font-size: 14px;
-        }
-
-        .btn-delete:hover {
-            background-color: var(--rojo-rosario);
-            color: var(--blanco);
-        }
-
-        /* Tabla de Servicios */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid #333333;
-        }
-
-        th {
-            color: var(--gris-metalico);
-            font-weight: bold;
-            border-bottom: 2px solid var(--rojo-rosario);
-            text-transform: uppercase;
-            font-size: 14px;
-        }
-
-        tr:hover {
-            background-color: #1a1a1a;
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-        }
-    </style>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Lato:wght@300;400;700&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="{% static 'core/css/styles.css' %}" />
 </head>
 <body>
 
-    <header>
-        <img src="{% static 'core/img/logo.jpg' %}" alt="Logo Rosario Estética Vehicular">
-    </header>
+  <header class="site-header" id="site-header">
+    <nav class="navbar navbar-expand-md" aria-label="Navegación principal">
+      <div class="container">
 
-    <div class="container">
-        <h1>Gestión de Servicios</h1>
+        <a class="navbar-brand" href="#inicio">
+          <img src="{% static 'core/img/logo.jpg' %}" alt="Logo de Rosario Estética Vehicular" height="58" />
+        </a>
 
-        <form id="service-form" class="form-group">
-            {% csrf_token %}
-            <input type="hidden" id="service-id">
-            <input type="text" id="nombre" placeholder="Nombre del servicio (Ej. Tratamiento Acrílico)" required>
-            <input type="number" id="precio" placeholder="Precio ($)" step="0.01" required>
-            <input type="number" id="duracion" placeholder="Duración (Min)" required>
-            <button type="submit">Guardar</button>
-        </form>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#menuPrincipal"
+          aria-controls="menuPrincipal"
+          aria-expanded="false"
+          aria-label="Abrir menú"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Servicio</th>
-                    <th>Duración</th>
-                    <th>Precio</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="services-table-body">
-            </tbody>
-        </table>
+        <div class="collapse navbar-collapse" id="menuPrincipal">
+          <ul class="navbar-nav ms-auto gap-2 align-items-center">
+            <li class="nav-item"><a class="nav-link" href="#inicio">Inicio</a></li>
+            <li class="nav-item"><a class="nav-link" href="#catalogo">Servicios</a></li>
+            <li class="nav-item"><a class="nav-link" href="#nosotros">Nosotros</a></li>
+            <li class="nav-item"><a class="nav-link" href="#contacto">Turnos</a></li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'crud_servicios' %}" style="border: 1px solid #BD201B; color: #FFFFFF !important;">
+                CRUD Servicios
+              </a>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </nav>
+  </header>
+
+  <main>
+
+    <section id="inicio" class="hero" aria-label="Presentación">
+      <div class="hero-content">
+        <p class="hero-eyebrow">Detailing &amp; Cuidado Automotriz Profesional</p>
+        <h1 class="hero-title">Brillo extremo,<br/>detalle perfecto</h1>
+        <p class="hero-subtitle">
+          Devolvemos a tu vehículo su aspecto de fábrica con tratamientos de pulido,
+          sellado cerámico y limpieza integral de alta gama.
+        </p>
+        <a href="#catalogo" class="btn-rojo">Ver servicios</a>
+      </div>
+    </section>
+
+    <section id="catalogo" class="seccion-oscura-alt" aria-labelledby="titulo-catalogo">
+      <div class="container">
+
+        <h2 id="titulo-catalogo" class="titulo-seccion claro">Nuestros Servicios</h2>
+        <p class="subtitulo-seccion">Servicios activos sincronizados desde nuestro catálogo</p>
+
+        <div id="grilla-productos" class="grilla-productos" aria-live="polite">
+          {% for servicio in servicios %}
+          <article class="producto-card card-entrada" style="animation-delay: {{ forloop.counter0 }}00ms;">
+            <div class="producto-imagen" aria-hidden="true"></div>
+            <div class="producto-info">
+              <p class="producto-categoria">Duración estimada: {{ servicio.duracion }} min</p>
+              <h3 class="producto-nombre">{{ servicio.nombre_servicio }}</h3>
+              <p class="producto-descripcion">Servicio profesional de estética y cuidado vehicular ejecutado con productos de alta gama.</p>
+              <p class="producto-precio">${{ servicio.precio }}</p>
+              <button class="btn-agregar" type="button">Reservar turno</button>
+            </div>
+          </article>
+          {% endfor %}
+        </div>
+
+      </div>
+    </section>
+
+    <section id="nosotros" class="seccion-negra" aria-labelledby="titulo-nosotros">
+      <div class="container nosotros-grid">
+
+        <div class="nosotros-texto">
+          <h2 id="titulo-nosotros" class="titulo-seccion claro">Pasión por el detalle</h2>
+          <p>
+            En Rosario Estética Vehicular tratamos cada auto como si fuera propio.
+            Combinamos técnicas profesionales de detailing con productos importados de
+            primera línea para proteger y realzar cada superficie.
+          </p>
+          <p>
+            Desde un lavado artesanal seguro hasta correcciones de laca y tratamientos
+            cerámicos de larga duración, garantizamos resultados visibles y protección
+            real contra el clima y el desgaste diario.
+          </p>
+          <ul class="lista-valores" aria-label="Nuestros valores">
+            <li>Productos importados de pH neutro y máxima calidad</li>
+            <li>Atención personalizada y diagnóstico previo de pintura</li>
+            <li>Más de 5 años de experiencia en estética automotriz</li>
+          </ul>
+        </div>
+
+        <div class="nosotros-imagen" aria-hidden="true">
+          <div class="imagen-decorativa">
+            <span class="numero-grande">100%</span>
+            <span class="numero-label">acabado espejo y protección garantizada</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section id="contacto" class="seccion-oscura-alt" aria-labelledby="titulo-contacto">
+      <div class="container contacto-grid">
+
+        <div class="contacto-info">
+          <h2 id="titulo-contacto" class="titulo-seccion claro">Reservá tu turno</h2>
+          <p>¿Querés cotizar un tratamiento o agendar tu visita al taller? Completá el formulario y te respondemos a la brevedad.</p>
+          <ul class="info-lista" aria-label="Información de contacto">
+            <li>Salta - Capital, Argentina</li>
+            <li>+54 9 387 123-4567</li>
+            <li>contacto@rosarioestetica.com</li>
+          </ul>
+        </div>
+
+        <div class="contacto-formulario">
+          <form id="form-contacto" novalidate aria-label="Formulario de contacto y turnos">
+
+            <div class="campo-grupo">
+              <label for="nombre">Nombre completo *</label>
+              <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                placeholder="Tu nombre"
+                autocomplete="name"
+                aria-required="true"
+              />
+              <span class="error-msg" id="error-nombre" role="alert"></span>
+            </div>
+
+            <div class="campo-grupo">
+              <label for="email">Correo electrónico *</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                placeholder="tu@email.com"
+                autocomplete="email"
+                aria-required="true"
+              />
+              <span class="error-msg" id="error-email" role="alert"></span>
+            </div>
+
+            <div class="campo-grupo">
+              <label for="telefono">Teléfono / WhatsApp (opcional)</label>
+              <input
+                type="tel"
+                id="telefono"
+                name="telefono"
+                placeholder="+54 9 387 ..."
+                autocomplete="tel"
+              />
+            </div>
+
+            <div class="campo-grupo">
+              <label for="interes">¿Qué servicio buscás?</label>
+              <select id="interes" name="interes" aria-label="Seleccioná tu interés">
+                <option value="">-- Elegí una opción --</option>
+                <option value="consulta">Consulta general / Presupuesto</option>
+                <option value="pedido">Reservar turno de servicio</option>
+                <option value="tratamiento">Tratamiento Acrílico / Cerámico</option>
+                <option value="flota">Convenio empresas / Flotas</option>
+              </select>
+            </div>
+
+            <div class="campo-grupo">
+              <label for="mensaje">Vehículo y consulta *</label>
+              <textarea
+                id="mensaje"
+                name="mensaje"
+                rows="4"
+                placeholder="Indicanos marca, modelo y el servicio que te interesa..."
+                aria-required="true"
+              ></textarea>
+              <span class="error-msg" id="error-mensaje" role="alert"></span>
+            </div>
+
+            <div class="campo-grupo campo-check">
+              <input type="checkbox" id="acepto" name="acepto" aria-required="true" />
+              <label for="acepto">Acepto recibir respuesta por email o WhatsApp</label>
+              <span class="error-msg" id="error-acepto" role="alert"></span>
+            </div>
+
+            <button type="submit" class="btn-rojo" id="btn-enviar">
+              Solicitar turno
+            </button>
+
+          </form>
+
+          <div id="mensaje-exito" class="mensaje-exito oculto" role="status" aria-live="polite">
+            ¡Gracias! Tu solicitud fue enviada. Nos comunicamos pronto para confirmar tu turno.
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-grid">
+      <div>
+        <img src="{% static 'core/img/logo.jpg' %}" alt="Rosario Estética Vehicular" height="48" />
+      </div>
+      <p class="footer-copy">© 2026 Rosario — Estética Vehicular. Todos los derechos reservados.</p>
+      <nav class="footer-redes" aria-label="Redes sociales">
+        <a href="https://www.instagram.com" target="_blank" rel="noopener" aria-label="Instagram" class="red-social instagram">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+            <circle cx="12" cy="12" r="4"/>
+            <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/>
+          </svg>
+        </a>
+        <a href="https://www.facebook.com" target="_blank" rel="noopener" aria-label="Facebook" class="red-social facebook">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
+          </svg>
+        </a>
+        <a href="https://www.tiktok.com" target="_blank" rel="noopener" aria-label="TikTok" class="red-social tiktok">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.75a4.85 4.85 0 0 1-1.01-.06z"/>
+          </svg>
+        </a>
+      </nav>
     </div>
+  </footer>
 
-    <script>
-        const API_URL = '/api/servicios'; 
-
-        async function cargarServicios() {
-            try {
-                const res = await fetch(API_URL);
-                const servicios = await res.json();
-                const tbody = document.getElementById('services-table-body');
-                tbody.innerHTML = '';
-                
-                servicios.forEach(s => {
-                    if(s.activo) {
-                        tbody.innerHTML += `
-                            <tr>
-                                <td>${s.nombre_servicio}</td>
-                                <td>${s.duracion} min</td>
-                                <td>$${s.precio}</td>
-                                <td class="actions">
-                                    <button type="button" onclick="editar(${s.id_servicio}, '${s.nombre_servicio}', ${s.precio}, ${s.duracion})" class="btn-edit">Editar</button>
-                                    <button type="button" onclick="eliminar(${s.id_servicio})" class="btn-delete">Eliminar</button>
-                                </td>
-                            </tr>
-                        `;
-                    }
-                });
-            } catch (error) {
-                console.error("Error cargando los servicios:", error);
-            }
-        }
-
-        document.getElementById('service-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const id = document.getElementById('service-id').value;
-            const nombre_servicio = document.getElementById('nombre').value;
-            const precio = parseFloat(document.getElementById('precio').value); // Convertimos a número
-            const duracion = parseInt(document.getElementById('duracion').value); // Convertimos a entero
-            
-            // 1. Capturamos el token de seguridad generado por Django
-            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-
-            const method = id ? 'PUT' : 'POST';
-            const url = id ? `${API_URL}/${id}` : API_URL;
-
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken // 2. Lo enviamos en la petición
-                    },
-                    body: JSON.stringify({ nombre_servicio, precio, duracion, activo: true })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.text();
-                    alert("Error del servidor: " + errorData);
-                    return;
-                }
-
-                e.target.reset();
-                document.getElementById('service-id').value = '';
-                cargarServicios();
-            } catch (error) {
-                alert("Error al comunicarse con la API.");
-            }
-        });
-
-    async function eliminar(id) {
-            if (confirm('¿Estás seguro de eliminar este servicio permanentemente?')) {
-                const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                
-                try {
-                    // 1. Quitamos la palabra /desactivar de la URL
-                    // 2. Cambiamos el método de 'PATCH' a 'DELETE'
-                    const response = await fetch(`${API_URL}/${id}`, { 
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRFToken': csrftoken
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        alert("No se pudo eliminar. Es posible que el servicio esté asociado a un turno existente.");
-                        return;
-                    }
-                    
-                    cargarServicios();
-                } catch (error) {
-                    console.error(error);
-                }
-            }
-        }
-
-        function editar(id, nombre, precio, duracion) {
-            document.getElementById('service-id').value = id;
-            document.getElementById('nombre').value = nombre;
-            document.getElementById('precio').value = precio;
-            document.getElementById('duracion').value = duracion;
-        }
-
-        cargarServicios();
-    </script>  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{% static 'core/js/catalogo.js' %}"></script>
+  <script src="{% static 'core/js/formulario.js' %}"></script>
+  <script src="{% static 'core/js/navegacion.js' %}"></script>
 </body>
 </html>

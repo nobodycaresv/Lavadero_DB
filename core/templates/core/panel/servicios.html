@@ -1,0 +1,79 @@
+{% extends "core/panel/base_panel.html" %}
+{% block titulo %}Servicios{% endblock %}
+{% block encabezado %}Gestión de Servicios{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta">
+    <form id="form" class="form-group">
+        <input type="hidden" id="id">
+        <input type="text" id="nombre" placeholder="Nombre del servicio (Ej. Tratamiento Acrílico)" required>
+        <input type="number" id="precio" placeholder="Precio ($)" step="0.01" required>
+        <input type="number" id="duracion" placeholder="Duración (min)" required>
+        <button type="submit">Guardar</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr><th>Servicio</th><th>Duración</th><th>Precio</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API = '/api/servicios';
+    const $ = id => document.getElementById(id);
+    let lista = [];
+
+    async function cargar() {
+        lista = (await api(API) || []).sort((a, b) => b.id_servicio - a.id_servicio);
+        $('tabla').innerHTML = lista.map(s => `
+            <tr class="${s.activo ? '' : 'row-inactive'}">
+                <td>${s.nombre_servicio}</td>
+                <td>${s.duracion} min</td>
+                <td>$${s.precio}</td>
+                <td class="actions">
+                    <button class="btn-edit" onclick="editar(${s.id_servicio})">Editar</button>
+                    <button class="${s.activo ? 'btn-delete' : 'btn-activate'}" onclick="cambiarActivo(${s.id_servicio})">${s.activo ? 'Eliminar' : 'Activar'}</button>
+                </td>
+            </tr>`).join('');
+    }
+
+    function editar(id) {
+        const s = lista.find(x => x.id_servicio === id);
+        $('id').value = id;
+        $('nombre').value = s.nombre_servicio;
+        $('precio').value = s.precio;
+        $('duracion').value = s.duracion;
+    }
+
+    async function cambiarActivo(id) {
+        const s = lista.find(x => x.id_servicio === id);
+        const msg = s.activo
+            ? '¿Quitar este servicio del listado? No se borra de la base de datos.'
+            : '¿Volver a activar este servicio?';
+        if (confirm(msg) && await api(`${API}/${id}`, 'PATCH', { activo: !s.activo })) cargar();
+    }
+
+    $('form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = $('id').value;
+        const datos = {
+            nombre_servicio: $('nombre').value,
+            precio: parseFloat($('precio').value),
+            duracion: parseInt($('duracion').value),
+            activo: id ? lista.find(x => x.id_servicio == id).activo : true
+        };
+        if (await api(id ? `${API}/${id}` : API, id ? 'PUT' : 'POST', datos)) {
+            e.target.reset();
+            $('id').value = '';
+            avisar('Servicio guardado');
+            cargar();
+        }
+    });
+
+    cargar();
+</script>
+{% endblock %}

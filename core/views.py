@@ -1,31 +1,36 @@
-from django.contrib.auth import authenticate, get_user_model, login, logout
-from django.shortcuts import redirect, render
+from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import F, Sum
+from django.http import Http404
+from django.shortcuts import render
+from django.template import TemplateDoesNotExist
 from django.utils import timezone
+
+from catalogos.models import Servicio
+from finanzas.models import Pago
+from insumos.models import Insumo
+from operaciones.models import Turno
 
 
 def home(request):
-    return render(request, 'core/home.html', {'hora_actual': timezone.now()})
+    servicios = Servicio.objects.filter(activo=True).order_by("-id_servicio")
+    return render(request, "core/home.html", {"servicios": servicios})
 
 
-def login_view(request):
-    if request.user.is_authenticated:
-        return redirect('panel')
-
-    error = None
-    if request.method == 'POST':
-        correo = request.POST.get('correo', '').strip()
-        clave = request.POST.get('contrasena', '')
-        # Django autentica por username: buscamos el usuario por su correo
-        usuario = get_user_model().objects.filter(email__iexact=correo).first()
-        user = authenticate(request, username=usuario.get_username(), password=clave) if usuario else None
-        if user is not None:
-            login(request, user)
-            return redirect(request.GET.get('next') or 'panel')
-        error = 'Correo o contraseña incorrectos.'
-
-    return render(request, 'core/login.html', {'error': error})
+@staff_member_required(login_url="/admin/login/")
+def panel_inicio(request):
+    hoy = timezone.localdate()
+    contexto = {
+        "turnos_hoy": Turno.objects.filter(fecha=hoy).count(),
+        "cobrado_hoy": Pago.objects.filter(fecha_hora__date=hoy).aggregate(t=Sum("monto"))["t"] or 0,
+        "stock_bajo": Insumo.objects.filter(activo=True, stock_actual__lte=F("stock_minimo")).count(),
+    }
+    return render(request, "core/panel/inicio.html", contexto)
 
 
-def logout_view(request):
-    logout(request)
-    return redirect('login')
+# Sirve cualquier pantalla del panel: /panel/clientes/ -> core/panel/clientes.html
+@staff_member_required(login_url="/admin/login/")
+def panel_pagina(request, pagina):
+    try:
+        return render(request, f"core/panel/{pagina}.html")
+    except TemplateDoesNotExist:
+        raise Http404

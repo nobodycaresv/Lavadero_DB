@@ -68,13 +68,13 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("DB_NAME", os.environ.get("POSTGRES_DB", "lavadero_db")),
-        "USER": os.environ.get("DB_USER", os.environ.get("POSTGRES_USER", "postgres")),
-        "PASSWORD": os.environ.get("DB_PASSWORD", os.environ.get("POSTGRES_PASSWORD", "")),
-        "HOST": os.environ.get("DB_HOST") or "db",
-        "PORT": os.environ.get("DB_PORT") or os.environ.get("POSTGRES_PORT") or "5432",
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'lavadero_db'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'tu_password_local'),
+        'HOST': os.environ.get('DB_HOST', 'db'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
@@ -95,4 +95,3 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {"COERCE_DECIMAL_TO_STRING": False}
-LOGIN_URL = "login"
