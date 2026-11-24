@@ -3,13 +3,19 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from catalogos.models import Servicio
+from catalogos.models import Estado, MedioPago, Servicio
+from finanzas.models import Pago
 
-from .serializers import ServicioSerializer
+from .serializers import (
+    EstadoSerializer,
+    MedioPagoSerializer,
+    PagoSerializer,
+    ServicioSerializer,
+)
 
 
 class EstadoAPIView(APIView):
-    """Endpoint de ejemplo para confirmar que la API REST esta funcionando."""
+    """Endpoint de ejemplo para confirmar que la API REST esta funcionando correctamente."""
 
     def get(self, request):
         return Response(
@@ -19,6 +25,42 @@ class EstadoAPIView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class EstadoViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = Estado.objects.all().order_by("id_estado")
+    serializer_class = EstadoSerializer
+
+
+class MedioPagoViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = MedioPago.objects.all().order_by("id_medio_pago")
+    serializer_class = MedioPagoSerializer
+
+
+class PagoViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
+    queryset = Pago.objects.all().order_by("-id_pago")
+    serializer_class = PagoSerializer
 
 
 class ServicioViewSet(

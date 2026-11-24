@@ -67,6 +67,22 @@
             margin-bottom: 15px;
         }
 
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            accent-color: var(--red-rosario);
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+        }
+
         label {
             display: block;
             margin-bottom: 5px;
@@ -85,7 +101,7 @@
             box-sizing: border-box;
         }
 
-        input:focus {
+        input:focus, select:focus {
             outline: none;
             border-color: #ff332e;
             box-shadow: 0 0 5px rgba(189, 32, 27, 0.5);
@@ -132,6 +148,10 @@
             color: #9be9a8;
         }
 
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -159,7 +179,7 @@
     <div class="container">
         <header>
             <h1>Rosario Estética Vehicular</h1>
-            <p class="subtitle">Panel de Control y Gestión - Catálogos</p>
+            <p class="subtitle">Panel de Control y Gestión - Catálogos y Finanzas</p>
         </header>
 
         <!-- Formulario para Estados -->
@@ -182,12 +202,49 @@
         <!-- Formulario para Medios de Pago -->
         <div class="card">
             <h2>Registrar Medio de Pago</h2>
+            <form id="form-medio-pago" novalidate>
+                <div class="form-group">
+                    <label for="nombre-medio-pago">Nombre del Medio de Pago:</label>
+                    <input type="text" id="nombre-medio-pago" required placeholder="Ej. Transferencia Bancaria">
+                </div>
+                <button type="submit" id="btnGuardarMedioPago">Guardar Medio de Pago</button>
+            </form>
+            <div id="feedback-medio-pago" class="feedback-msg"></div>
+        </div>
+
+        <!-- Formulario para Pagos -->
+        <div class="card">
+            <h2>Registrar Pago</h2>
             <form id="form-pago" novalidate>
                 <div class="form-group">
-                    <label for="nombre-pago">Nombre del Medio de Pago:</label>
-                    <input type="text" id="nombre-pago" required placeholder="Ej. Transferencia Bancaria">
+                    <label for="pago-factura">ID Factura:</label>
+                    <input type="number" id="pago-factura" min="1" required placeholder="Ej. 1">
                 </div>
-                <button type="submit" id="btnGuardarPago">Guardar Medio de Pago</button>
+                <div class="form-group">
+                    <label for="pago-medio">ID Medio de Pago:</label>
+                    <input type="number" id="pago-medio" min="1" required placeholder="Ej. 1">
+                </div>
+                <div class="form-group">
+                    <label for="pago-estado">ID Estado:</label>
+                    <input type="number" id="pago-estado" min="1" required placeholder="Ej. 1">
+                </div>
+                <div class="form-group">
+                    <label for="pago-monto">Monto:</label>
+                    <input type="number" id="pago-monto" step="0.01" min="0" required placeholder="Ej. 15000.00">
+                </div>
+                <div class="form-group">
+                    <label for="pago-fecha-hora">Fecha y Hora:</label>
+                    <input type="datetime-local" id="pago-fecha-hora" required>
+                </div>
+                <div class="form-group">
+                    <label for="pago-concepto">Concepto (opcional):</label>
+                    <input type="text" id="pago-concepto" maxlength="100" placeholder="Ej. Seña o cancelación total">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="pago-adelanto">
+                    <label for="pago-adelanto">Es pago de adelanto</label>
+                </div>
+                <button type="submit" id="btnGuardarPago">Guardar Pago</button>
             </form>
             <div id="feedback-pago" class="feedback-msg"></div>
         </div>
@@ -195,38 +252,68 @@
         <!-- Listado de Estados -->
         <div class="card">
             <h2>Listado de Estados Actuales</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Tipo</th>
-                        <th>Nombre</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-estados">
-                    <tr>
-                        <td colspan="3" style="text-align: center;">Cargando estados...</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo</th>
+                            <th>Nombre</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-estados">
+                        <tr>
+                            <td colspan="3" style="text-align: center;">Cargando estados...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <!-- Listado de Medios de Pago -->
         <div class="card">
             <h2>Listado de Medios de Pago Actuales</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-medios-pago">
-                    <tr>
-                        <td colspan="2" style="text-align: center;">Cargando medios de pago...</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-medios-pago">
+                        <tr>
+                            <td colspan="2" style="text-align: center;">Cargando medios de pago...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Listado de Pagos -->
+        <div class="card">
+            <h2>Listado de Pagos Actuales</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Factura</th>
+                            <th>Medio de Pago</th>
+                            <th>Estado</th>
+                            <th>Monto</th>
+                            <th>Fecha y Hora</th>
+                            <th>Concepto</th>
+                            <th>Adelanto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-pagos">
+                        <tr>
+                            <td colspan="8" style="text-align: center;">Cargando pagos...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -250,6 +337,13 @@
             tipo: 'Ámbito / Tipo',
             nombre: 'Nombre',
             nombre_servicio: 'Nombre del servicio',
+            factura: 'Factura',
+            medio_pago: 'Medio de pago',
+            estado: 'Estado',
+            monto: 'Monto',
+            fecha_hora: 'Fecha y hora',
+            concepto: 'Concepto',
+            pago_adelanto: 'Pago de adelanto',
             non_field_errors: 'Validación',
             detail: 'Detalle'
         };
@@ -285,7 +379,7 @@
             const tbody = document.getElementById('tabla-estados');
             if (!tbody) return;
 
-            fetch('/api/estados/')
+            fetch('/api/estados')
                 .then(res => res.ok ? res.json() : Promise.reject(res))
                 .then(data => {
                     const lista = Array.isArray(data) ? data : (data.results || []);
@@ -310,7 +404,7 @@
             const tbody = document.getElementById('tabla-medios-pago');
             if (!tbody) return;
 
-            fetch('/api/medios-pago/')
+            fetch('/api/medios-pago')
                 .then(res => res.ok ? res.json() : Promise.reject(res))
                 .then(data => {
                     const lista = Array.isArray(data) ? data : (data.results || []);
@@ -330,10 +424,41 @@
                 });
         }
 
+        function cargarPagos() {
+            const tbody = document.getElementById('tabla-pagos');
+            if (!tbody) return;
+
+            fetch('/api/pagos')
+                .then(res => res.ok ? res.json() : Promise.reject(res))
+                .then(data => {
+                    const lista = Array.isArray(data) ? data : (data.results || []);
+                    if (lista.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No hay pagos cargados todavía.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = lista.map(item => `
+                        <tr>
+                            <td>${item.id_pago ?? item.id ?? ''}</td>
+                            <td>${item.factura ?? ''}</td>
+                            <td>${item.medio_pago ?? ''}</td>
+                            <td>${item.estado ?? ''}</td>
+                            <td>${item.monto ?? ''}</td>
+                            <td>${item.fecha_hora ?? ''}</td>
+                            <td>${item.concepto ?? ''}</td>
+                            <td>${item.pago_adelanto ? 'Sí' : 'No'}</td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(() => {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No se pudieron cargar los pagos.</td></tr>';
+                });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const csrftoken = getCookie('csrftoken');
             cargarEstados();
             cargarMediosPago();
+            cargarPagos();
 
             // --- GUARDAR ESTADO ---
             const formEstado = document.getElementById('form-estado');
@@ -345,7 +470,7 @@
                     const nombre = document.getElementById('nombre-estado').value;
 
                     try {
-                        const response = await fetch('/api/estados/', {
+                        const response = await fetch('/api/estados', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -379,15 +504,15 @@
             }
 
             // --- GUARDAR MEDIO DE PAGO ---
-            const formPago = document.getElementById('form-pago');
-            if (formPago) {
-                formPago.addEventListener('submit', async function(e) {
+            const formMedioPago = document.getElementById('form-medio-pago');
+            if (formMedioPago) {
+                formMedioPago.addEventListener('submit', async function(e) {
                     e.preventDefault();
 
-                    const nombre = document.getElementById('nombre-pago').value;
+                    const nombre = document.getElementById('nombre-medio-pago').value;
 
                     try {
-                        const response = await fetch('/api/medios-pago/', {
+                        const response = await fetch('/api/medios-pago', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -399,20 +524,70 @@
                         const data = await response.json().catch(() => ({}));
 
                         if (response.ok) {
-                            mostrarFeedback('feedback-pago', '¡Medio de pago guardado con éxito!', false);
-                            formPago.reset();
+                            mostrarFeedback('feedback-medio-pago', '¡Medio de pago guardado con éxito!', false);
+                            formMedioPago.reset();
                             cargarMediosPago();
                         } else {
                             const detalle = formatearErroresDRF(
                                 data,
                                 'No se pudo guardar el medio de pago por datos inválidos.'
                             );
+                            mostrarFeedback('feedback-medio-pago', detalle, true);
+                        }
+                    } catch (error) {
+                        mostrarFeedback(
+                            'feedback-medio-pago',
+                            'Error de conexión con el servidor al intentar guardar el medio de pago.',
+                            true
+                        );
+                        console.error('Error:', error);
+                    }
+                });
+            }
+
+            // --- GUARDAR PAGO ---
+            const formPago = document.getElementById('form-pago');
+            if (formPago) {
+                formPago.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const payload = {
+                        factura: document.getElementById('pago-factura').value,
+                        medio_pago: document.getElementById('pago-medio').value,
+                        estado: document.getElementById('pago-estado').value,
+                        monto: document.getElementById('pago-monto').value,
+                        fecha_hora: document.getElementById('pago-fecha-hora').value,
+                        concepto: document.getElementById('pago-concepto').value,
+                        pago_adelanto: document.getElementById('pago-adelanto').checked
+                    };
+
+                    try {
+                        const response = await fetch('/api/pagos', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrftoken || ''
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await response.json().catch(() => ({}));
+
+                        if (response.ok) {
+                            mostrarFeedback('feedback-pago', '¡Pago guardado con éxito!', false);
+                            formPago.reset();
+                            cargarPagos();
+                        } else {
+                            const detalle = formatearErroresDRF(
+                                data,
+                                'No se pudo guardar el pago por datos inválidos.'
+                            );
                             mostrarFeedback('feedback-pago', detalle, true);
                         }
                     } catch (error) {
                         mostrarFeedback(
                             'feedback-pago',
-                            'Error de conexión con el servidor al intentar guardar el medio de pago.',
+                            'Error de conexión con el servidor al intentar guardar el pago.',
                             true
                         );
                         console.error('Error:', error);
