@@ -1,0 +1,90 @@
+{% extends "core/panel/base_panel.html" %}
+{% block titulo %}Empleados{% endblock %}
+{% block encabezado %}Gestión de Empleados{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta">
+    <form id="form" class="form-group">
+        <input type="hidden" id="id">
+        <input type="text" id="nombre" placeholder="Nombre (Ej. Juan)" required>
+        <input type="text" id="apellido" placeholder="Apellido (Ej. Pérez)" required>
+        <select id="rol" required>
+            <option value="">Seleccionar rol...</option>
+            <option value="propietario">Propietario</option>
+            <option value="gerente">Gerente</option>
+            <option value="supervisor">Supervisor</option>
+            <option value="lavador">Lavador</option>
+        </select>
+        <button type="submit">Guardar</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr><th>Nombre</th><th>Apellido</th><th>Rol</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API = '/api/empleados';
+    const $ = id => document.getElementById(id);
+    let lista = [];
+
+    async function cargar() {
+        lista = (await api(API) || []).sort((a, b) => b.id_empleado - a.id_empleado);
+        $('tabla').innerHTML = lista.map(e => `
+            <tr class="${e.activo ? '' : 'row-inactive'}">
+                <td>${e.nombre}</td>
+                <td>${e.apellido}</td>
+                <td>${e.rol}</td>
+                <td class="actions">
+                    <button class="btn-edit" onclick="editar(${e.id_empleado})">Editar</button>
+                    <button class="${e.activo ? 'btn-delete' : 'btn-activate'}" onclick="cambiarActivo(${e.id_empleado})">${e.activo ? 'Eliminar' : 'Activar'}</button>
+                </td>
+            </tr>`).join('');
+    }
+
+    function editar(id) {
+        const e = lista.find(x => x.id_empleado === id);
+        $('id').value = id;
+        $('nombre').value = e.nombre;
+        $('apellido').value = e.apellido;
+        $('rol').value = e.rol;
+    }
+
+    async function cambiarActivo(id) {
+        const e = lista.find(x => x.id_empleado === id);
+        const msg = e.activo
+            ? '¿Quitar este empleado del listado? No se borra de la base de datos.'
+            : '¿Volver a activar este empleado?';
+        if (confirm(msg) && await api(`${API}/${id}`, 'PATCH', { activo: !e.activo })) cargar();
+    }
+
+    $('form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = $('id').value;
+        const nombre = $('nombre').value.trim();
+        const apellido = $('apellido').value.trim();
+        const rol = $('rol').value;
+        if (!nombre || !apellido || !rol) return avisar('Completá todos los campos');
+
+        const datos = {
+            nombre,
+            apellido,
+            rol,
+            activo: id ? lista.find(x => x.id_empleado == id).activo : true
+        };
+        if (await api(id ? `${API}/${id}` : API, id ? 'PUT' : 'POST', datos)) {
+            e.target.reset();
+            $('id').value = '';
+            avisar('Empleado guardado');
+            cargar();
+        }
+    });
+
+    cargar();
+</script>
+{% endblock %}
