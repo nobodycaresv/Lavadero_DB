@@ -1,0 +1,146 @@
+{% extends "core/panel/base_panel.html" %}
+{% block titulo %}Insumos y stock{% endblock %}
+{% block encabezado %}Insumos y Stock{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta">
+    <h2 class="subtitulo">Insumos</h2>
+    <form id="form" class="form-group">
+        <input type="hidden" id="id">
+        <input type="text" id="nombre" placeholder="Nombre" maxlength="50" required>
+        <input type="text" id="unidad" placeholder="Unidad (litros, u.)" maxlength="30" required>
+        <input type="number" id="stock" placeholder="Stock inicial" step="0.01" min="0" required>
+        <input type="number" id="minimo" placeholder="Stock mínimo" step="0.01" min="0" required>
+        <input type="number" id="costo" placeholder="Costo ($)" step="0.01" min="0" required>
+        <button type="submit">Guardar</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr><th>Insumo</th><th>Stock</th><th>Mínimo</th><th>Costo</th><th>Estado</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+    </table>
+</div>
+
+<div class="tarjeta">
+    <h2 class="subtitulo">Registrar consumo</h2>
+    <form id="form-consumo" class="form-group">
+        <select id="consumo-insumo" required></select>
+        <input type="number" id="consumo-cantidad" placeholder="Cantidad consumida" step="0.01" min="0.01" required>
+        <input type="text" id="consumo-motivo" placeholder="Motivo (Ej. Lavado de camioneta)" maxlength="50">
+        <button type="submit">Descontar del stock</button>
+    </form>
+</div>
+
+<div class="tarjeta">
+    <h2 class="subtitulo">Últimos movimientos de stock</h2>
+    <table>
+        <thead>
+            <tr><th>Fecha</th><th>Insumo</th><th>Tipo</th><th>Cantidad</th><th>Motivo</th></tr>
+        </thead>
+        <tbody id="tabla-movimientos"></tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API = '/api/insumos';
+    const $ = id => document.getElementById(id);
+    const esc = t => String(t ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+    const num = n => Number(n).toLocaleString('es-AR', { maximumFractionDigits: 2 });
+    let lista = [];
+
+    async function cargar() {
+        lista = await api(API) || [];
+        $('tabla').innerHTML = lista.map(i => `
+            <tr class="${i.activo ? '' : 'row-inactive'}">
+                <td>${esc(i.nombre)}</td>
+                <td>${num(i.stock_actual)} ${esc(i.unidad_medida)}</td>
+                <td>${num(i.stock_minimo)}</td>
+                <td>$${num(i.costo_unitario)}</td>
+                <td>${!i.activo ? '<span class="badge mal">Inactivo</span>'
+                    : i.stock_bajo ? '<span class="badge aviso">Stock bajo</span>'
+                    : '<span class="badge ok">OK</span>'}</td>
+                <td class="actions">
+                    <button class="btn-edit" onclick="editar(${i.id_insumo})">Editar</button>
+                    <button class="${i.activo ? 'btn-delete' : 'btn-activate'}" onclick="cambiarActivo(${i.id_insumo})">${i.activo ? 'Eliminar' : 'Activar'}</button>
+                </td>
+            </tr>`).join('');
+
+        // el consumo solo se ofrece sobre insumos activos
+        const actual = $('consumo-insumo').value;
+        $('consumo-insumo').innerHTML = '<option value="">Elegí un insumo</option>' +
+            lista.filter(i => i.activo).map(i =>
+                `<option value="${i.id_insumo}">${esc(i.nombre)} (${num(i.stock_actual)} ${esc(i.unidad_medida)})</option>`).join('');
+        $('consumo-insumo').value = actual;
+        cargarMovimientos();
+    }
+
+    async function cargarMovimientos() {
+        const movs = (await api('/api/movimientos') || []).slice(0, 15);
+        $('tabla-movimientos').innerHTML = movs.map(m => `
+            <tr>
+                <td>${new Date(m.fecha).toLocaleString('es-AR')}</td>
+                <td>${esc(m.insumo_nombre)}</td>
+                <td><span class="badge ${m.tipo_movimiento === 'entrada' ? 'ok' : 'aviso'}">${m.tipo_movimiento === 'entrada' ? 'Entrada' : 'Salida'}</span></td>
+                <td>${num(m.cantidad)} ${esc(m.unidad_medida)}</td>
+                <td>${esc(m.motivo)}</td>
+            </tr>`).join('');
+    }
+
+    function editar(id) {
+        const i = lista.find(x => x.id_insumo === id);
+        $('id').value = id;
+        $('nombre').value = i.nombre;
+        $('unidad').value = i.unidad_medida;
+        $('stock').value = i.stock_actual;
+        $('stock').disabled = true;   // el stock solo cambia con compras o consumos
+        $('stock').title = 'El stock se modifica registrando compras o consumos';
+        $('minimo').value = i.stock_minimo;
+        $('costo').value = i.costo_unitario;
+    }
+
+    async function cambiarActivo(id) {
+        const i = lista.find(x => x.id_insumo === id);
+        const msg = i.activo
+            ? '¿Quitar este insumo del listado? No se borra de la base de datos.'
+            : '¿Volver a activar este insumo?';
+        if (confirm(msg) && await api(`${API}/${id}`, 'PATCH', { activo: !i.activo })) cargar();
+    }
+
+    $('form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = $('id').value;
+        const datos = {
+            nombre: $('nombre').value,
+            unidad_medida: $('unidad').value,
+            stock_minimo: parseFloat($('minimo').value),
+            costo_unitario: parseFloat($('costo').value)
+        };
+        if (!id) datos.stock_actual = parseFloat($('stock').value);   // solo al crear
+        if (await api(id ? `${API}/${id}` : API, id ? 'PATCH' : 'POST', datos)) {
+            e.target.reset();
+            $('id').value = '';
+            $('stock').disabled = false;
+            $('stock').title = '';
+            avisar('Insumo guardado');
+            cargar();
+        }
+    });
+
+    $('form-consumo').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = $('consumo-insumo').value;
+        const datos = { cantidad: parseFloat($('consumo-cantidad').value), motivo: $('consumo-motivo').value };
+        if (await api(`${API}/${id}/consumir`, 'POST', datos)) {
+            e.target.reset();
+            avisar('Consumo registrado');
+            cargar();
+        }
+    });
+
+    cargar();
+</script>
+{% endblock %}

@@ -9,4 +9,6 @@ router.register("servicios", ServicioViewSet, basename="servicio")
 urlpatterns = [
     path("estado/", EstadoAPIView.as_view(), name="api-estado"),
     path("", include(router.urls)),
+    path("", include("api.rutas_clientes")),
+    path("", include("api.rutas_insumos")),
 ]
