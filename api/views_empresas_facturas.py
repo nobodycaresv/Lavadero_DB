@@ -79,7 +79,13 @@ class FacturaViewSet(
             f"Muchas gracias por confiar en Rosario Estética Vehicular."
         )
         remitente = getattr(settings, "DEFAULT_FROM_EMAIL", "no-reply@rosarioesteticavehicular.com")
-        send_mail(asunto, cuerpo, remitente, [destino], fail_silently=True)
+        try:
+            send_mail(asunto, cuerpo, remitente, [destino], fail_silently=False)
+        except Exception as exc:
+            return Response(
+                {"detail": f"No se pudo enviar el correo: {exc}"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         factura.enviada_por_email = True
         factura.save(update_fields=["enviada_por_email"])
