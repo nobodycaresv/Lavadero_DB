@@ -1,0 +1,419 @@
+{% extends "core/panel/base_panel.html" %}
+{% block titulo %}Turnos{% endblock %}
+{% block encabezado %}Gestión de Turnos{% endblock %}
+
+{% block contenido %}
+<style>
+    .turno-form-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+    .turno-fila-superior {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        align-items: center;
+    }
+    .turno-fila-inferior {
+        display: grid;
+        grid-template-columns: 1fr 1fr auto;
+        gap: 10px;
+        align-items: center;
+    }
+    @media (max-width: 768px) {
+        .turno-fila-inferior {
+            grid-template-columns: 1fr;
+        }
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1) brightness(1.2);
+        cursor: pointer;
+        opacity: 1;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator:hover {
+        filter: invert(24%) sepia(92%) saturate(5535%) hue-rotate(355deg) brightness(95%) contrast(105%);
+    }
+    .error-validacion-turno {
+        margin-top: 8px;
+        padding: 10px 12px;
+        border-radius: 6px;
+        border: 1px solid #d93829;
+        background: rgba(217, 56, 41, 0.14);
+        color: #ffd6d2;
+        font-size: 0.9rem;
+    }
+    .estado-texto {
+        font-weight: 600;
+        background: none;
+        border: none;
+        padding: 0;
+    }
+    .estado-confirmado {
+        color: #0c7437;
+    }
+    .estado-pendiente {
+        color: #a18617;
+    }
+    .estado-cancelado {
+        color: #5e6263;
+    }
+    
+    table .actions button.btn-confirmar-azul {
+    background: linear-gradient(135deg, #1c4381, #1d4ed8) !important;
+    border-color: #2563eb !important;
+    color: #ffffff !important;
+    }
+    
+    table .actions button.btn-confirmar-azul:hover {
+        background: linear-gradient(135deg, #2563eb, #1e40af) !important;
+        border-color: #1d4ed8 !important;
+    }
+    
+    #texto-whatsapp {
+        font-family: inherit;
+        font-size: 0.92rem;
+        line-height: 1.5;
+        background: rgba(255, 255, 255, 0.03);
+        padding: 10px 12px;
+        border-radius: 6px;
+        color: #e5e7eb;
+    }
+
+    .btn-whatsapp-verde {
+        display: inline-block;
+        margin-top: 4px;
+        padding: 7px 14px;
+        border-radius: 6px;
+        background-color: #16a34a;
+        color: #ffffff;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .btn-whatsapp-verde:hover {
+        background-color: #15803d;
+    }
+
+</style>
+
+<div class="tarjeta">
+    <form id="form" class="turno-form-grid" novalidate>
+        <div class="turno-fila-superior">
+            <input type="text" id="nombre" placeholder="Nombre *" maxlength="40" required>
+            <input type="text" id="apellido" placeholder="Apellido *" maxlength="40" required>
+            <input type="email" id="email" placeholder="Correo electrónico *" maxlength="100" required>
+            <input type="tel" id="telefono" placeholder="Teléfono *" maxlength="15" inputmode="numeric" required>
+            <input type="text" id="patente" placeholder="Patente *" maxlength="8" required>
+            <input type="text" id="marca" placeholder="Marca *" maxlength="40" required>
+            <select id="servicio_id" required>
+                <option value="">Seleccionar servicio...</option>
+            </select>
+        </div>
+
+        <div class="turno-fila-inferior">
+            <input type="date" id="fecha" required>
+
+            <select id="hora" required>
+                <option value="">Bloque de turno (09:00 - 19:00)</option>
+                <option value="09:00:00">09:00 - 11:00</option>
+                <option value="11:00:00">11:00 - 13:00</option>
+                <option value="13:00:00">13:00 - 15:00</option>
+                <option value="15:00:00">15:00 - 17:00</option>
+                <option value="17:00:00">17:00 - 19:00</option>
+            </select>
+
+            <button type="submit">Registrar turno</button>
+        </div>
+    </form>
+
+    <div id="error-turno" class="error-validacion-turno" style="display: none;"></div>
+    <p id="info-agenda" style="margin-top: 8px; opacity: 0.85;"></p>
+
+    <div id="caja-whatsapp" style="display: none; margin: 14px 0; padding: 12px; border: 1px solid #444; border-radius: 6px;">
+        <strong>Validación por WhatsApp (estado inicial: Pendiente)</strong>
+        <pre id="texto-whatsapp" style="white-space: pre-wrap; margin: 8px 0;"></pre>
+        <a id="link-whatsapp" class="btn-whatsapp-verde" href="#" target="_blank" rel="noopener">Abrir WhatsApp para validar</a>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Horario</th>
+                <th>Cliente</th>
+                <th>Vehículo</th>
+                <th>Servicio</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API = '/api/turnos';
+    const API_SERVICIOS = '/api/servicios';
+    const $ = id => document.getElementById(id);
+    let lista = [];
+    let fechaMin = '';
+    let fechaMax = '';
+
+    const RE_LETRAS_ESPACIOS = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+(?: [A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*$/;
+    const RE_MARCA = /^[A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ]+(?: [A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ]+)*$/;
+    const RE_TELEFONO = /^\+?[0-9]{6,15}$/;
+    const RE_PATENTE = /^[A-Z0-9]{6,8}$/;
+    const RE_EMAIL = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+    function mostrarErrorTurno(msg) {
+        const box = $('error-turno');
+        if (!msg) {
+            box.style.display = 'none';
+            box.textContent = '';
+            return;
+        }
+        box.style.display = 'block';
+        box.textContent = msg;
+    }
+
+    function limpiarEspaciosMultiples(valor) {
+        return valor.replace(/ {2,}/g, ' ').replace(/^\s+/, '');
+    }
+
+    function formatearBloque(horaStr) {
+        const hh = parseInt((horaStr || '09:00').slice(0, 2), 10);
+        const inicio = `${String(hh).padStart(2, '0')}:00`;
+        const fin = `${String((hh + 2) % 24).padStart(2, '0')}:00`;
+        return `${inicio} - ${fin}`;
+    }
+
+    function limpiarTextoVehiculo(texto) {
+        if (!texto || typeof texto !== 'string') return texto || '';
+        return texto.replace(/\s*sin especificar\s*/gi, ' ').replace(/\s{2,}/g, ' ').trim();
+    }
+
+    function claseEstado(estadoTexto) {
+        const lower = (estadoTexto || '').toLowerCase();
+        if (lower.includes('confirm')) return 'estado-texto estado-confirmado';
+        if (lower.includes('cancel')) return 'estado-texto estado-cancelado';
+        return 'estado-texto estado-pendiente';
+    }
+
+    function validarCamposClienteYVehiculo() {
+        const nombre = $('nombre').value.trim().replace(/\s+/g, ' ');
+        const apellido = $('apellido').value.trim().replace(/\s+/g, ' ');
+        const email = $('email').value.trim().toLowerCase();
+        const telefono = $('telefono').value.trim();
+        const patente = $('patente').value.trim().toUpperCase();
+        const marca = $('marca').value.trim().replace(/\s+/g, ' ');
+        const servicioId = $('servicio_id').value;
+        const fecha = $('fecha').value;
+        const hora = $('hora').value;
+
+        if (!nombre || nombre.length < 2 || !RE_LETRAS_ESPACIOS.test(nombre)) {
+            return 'Ingresá un nombre válido (solo letras, mínimo 2 caracteres, sin espacios dobles).';
+        }
+        if (!apellido || apellido.length < 2 || !RE_LETRAS_ESPACIOS.test(apellido)) {
+            return 'Ingresá un apellido válido (solo letras, mínimo 2 caracteres, sin espacios dobles).';
+        }
+        if (!email || email.startsWith('@') || email.startsWith('.') || /\s/.test(email) || !RE_EMAIL.test(email)) {
+            return 'Ingresá un correo válido (no puede empezar con @ ni tener espacios).';
+        }
+        if (!telefono || !RE_TELEFONO.test(telefono)) {
+            return 'Ingresá un teléfono válido (solo números, entre 6 y 15 dígitos, sin letras).';
+        }
+        if (!patente || !RE_PATENTE.test(patente)) {
+            return 'Ingresá una patente válida (6 a 8 caracteres alfanuméricos, sin espacios).';
+        }
+        if (!marca || marca.length < 2 || !RE_MARCA.test(marca)) {
+            return 'Ingresá una marca válida (mínimo 2 caracteres, sin espacios dobles).';
+        }
+        if (!servicioId) {
+            return 'Seleccioná un servicio de la lista.';
+        }
+        if (!fecha) {
+            return 'Seleccioná una fecha en el calendario.';
+        }
+        if (!hora) {
+            return 'Seleccioná un bloque de turno de 2 horas.';
+        }
+        return null;
+    }
+
+    ['nombre', 'apellido'].forEach(id => {
+        $(id).addEventListener('input', e => {
+            e.target.value = limpiarEspaciosMultiples(e.target.value).replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]/g, '');
+        });
+    });
+
+    $('marca').addEventListener('input', e => {
+        e.target.value = limpiarEspaciosMultiples(e.target.value).replace(/[^A-Za-z0-9ÁÉÍÓÚÜÑáéíóúüñ ]/g, '');
+    });
+
+    $('telefono').addEventListener('input', e => {
+        let val = e.target.value.replace(/\s+/g, '');
+        if (val.startsWith('+')) {
+            val = '+' + val.slice(1).replace(/[^0-9]/g, '');
+        } else {
+            val = val.replace(/[^0-9]/g, '');
+        }
+        e.target.value = val;
+    });
+
+    $('patente').addEventListener('input', e => {
+        e.target.value = e.target.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    });
+
+    $('email').addEventListener('input', e => {
+        e.target.value = e.target.value.replace(/\s+/g, '');
+    });
+
+    async function cargarServicios() {
+        const servicios = (await api(API_SERVICIOS) || []).filter(s => s.activo !== false);
+        const sel = $('servicio_id');
+        if (!servicios.length) {
+            sel.innerHTML = `<option value="">No hay servicios activos</option>`;
+            return;
+        }
+        sel.innerHTML = `<option value="">Seleccionar servicio...</option>` + servicios.map(s => {
+            const idServ = s.id_servicio ?? s.id;
+            const nombreServ = s.nombre_servicio ?? s.nombre;
+            return `<option value="${idServ}">${nombreServ} (${s.duracion} min - $${s.precio})</option>`;
+        }).join('');
+    }
+
+    async function cargarLimitesYDisponibilidad(fechaSeleccionada = '') {
+        const query = fechaSeleccionada ? `?fecha=${encodeURIComponent(fechaSeleccionada)}` : '';
+        const data = await api(`${API}/disponibilidad${query}`);
+        if (!data) return;
+
+        fechaMin = data.hoy;
+        fechaMax = data.fecha_maxima;
+        $('fecha').min = fechaMin;
+        $('fecha').max = fechaMax;
+
+        if (!fechaSeleccionada && fechaMin) {
+            $('fecha').value = fechaMin;
+            return cargarLimitesYDisponibilidad(fechaMin);
+        }
+
+        $('info-agenda').textContent = `Ventana permitida: ${fechaMin} hasta ${fechaMax} (máx. 1 mes) · Bloques de 2 hs de 09:00 a 19:00.`;
+
+        const bloques = data.bloques || [];
+        const valorActual = $('hora').value;
+        $('hora').innerHTML = `<option value="">Bloque de turno (09:00 - 19:00)</option>` + bloques.map(b => {
+            const horaVal = `${b.inicio}:00`;
+            const etiqueta = b.ocupado ? `${b.etiqueta} (OCUPADO)` : b.etiqueta;
+            return `<option value="${horaVal}" ${!b.disponible ? 'disabled' : ''}>${etiqueta}</option>`;
+        }).join('');
+
+        if (valorActual) {
+            const opt = Array.from($('hora').options).find(o => o.value === valorActual && !o.disabled);
+            if (opt) $('hora').value = valorActual;
+        }
+    }
+
+    async function cargar() {
+        lista = (await api(API) || []);
+        $('tabla').innerHTML = lista.map(t => {
+            const estadoTexto = t.estado_nombre || t.estado || '';
+            const estadoLower = estadoTexto.toLowerCase();
+            const esPendiente = estadoLower === 'pendiente';
+            const esCancelado = estadoLower === 'cancelado';
+            const vehiculoLimpio = limpiarTextoVehiculo(t.vehiculo_descripcion || t.vehiculo);
+
+            return `
+                <tr class="${esCancelado ? 'row-inactive' : ''}">
+                    <td>${t.fecha}</td>
+                    <td>${formatearBloque(t.hora)}</td>
+                    <td>${t.cliente_nombre || ''} ${t.cliente_apellido || ''} (${t.cliente_telefono || ''})</td>
+                    <td>${vehiculoLimpio}</td>
+                    <td>${t.servicio_nombre || t.servicio}</td>
+                    <td><span class="${claseEstado(estadoTexto)}">${estadoTexto}</span></td>
+                    <td class="actions">
+                        ${esPendiente ? `<button class="btn-confirmar-azul" style="background-color: #2563eb !important; border-color: #2563eb !important; color: #ffffff !important;" onclick="confirmarValidacion(${t.id_turno})">Confirmar validación</button>` : ''}
+                        ${!esCancelado ? `<button class="btn-delete" onclick="cancelarTurno(${t.id_turno})">Cancelar</button>` : ''}
+                    </td>
+                </tr>`;
+        }).join('');
+    }
+
+    async function confirmarValidacion(id) {
+        if (!confirm('¿El usuario aceptó la validación por WhatsApp para pasar el turno a Confirmado?')) return;
+        const res = await api(`${API}/${id}/confirmar-validacion`, 'POST', { aceptado: true });
+        if (res) {
+            avisar('Turno confirmado tras validación');
+            await cargar();
+            await cargarLimitesYDisponibilidad($('fecha').value);
+        }
+    }
+
+    async function cancelarTurno(id) {
+        if (!confirm('¿Cancelar este turno? No se borra de la base de datos.')) return;
+        const res = await api(`${API}/${id}/cancelar`, 'PATCH', {});
+        if (res) {
+            avisar('Turno cancelado');
+            await cargar();
+            await cargarLimitesYDisponibilidad($('fecha').value);
+        }
+    }
+
+    $('fecha').addEventListener('change', e => {
+        mostrarErrorTurno('');
+        cargarLimitesYDisponibilidad(e.target.value);
+    });
+
+    $('form').addEventListener('submit', async e => {
+        e.preventDefault();
+        mostrarErrorTurno('');
+
+        const errorLocal = validarCamposClienteYVehiculo();
+        if (errorLocal) {
+            mostrarErrorTurno(errorLocal);
+            return;
+        }
+
+        const datos = {
+            nombre: $('nombre').value.trim().replace(/\s+/g, ' '),
+            apellido: $('apellido').value.trim().replace(/\s+/g, ' '),
+            email: $('email').value.trim().toLowerCase(),
+            telefono: $('telefono').value.trim(),
+            patente: $('patente').value.trim().toUpperCase(),
+            marca: $('marca').value.trim().replace(/\s+/g, ' '),
+            servicio_id: parseInt($('servicio_id').value, 10),
+            fecha: $('fecha').value,
+            hora: $('hora').value
+        };
+
+        const res = await api(API, 'POST', datos);
+        if (res) {
+            e.target.reset();
+            mostrarErrorTurno('');
+            avisar('Turno creado en estado Pendiente');
+
+            if (res.validacion_whatsapp) {
+                $('caja-whatsapp').style.display = 'block';
+                $('texto-whatsapp').textContent = limpiarTextoVehiculo(res.validacion_whatsapp.mensaje || '');
+                if (res.validacion_whatsapp.whatsapp_url) {
+                    $('link-whatsapp').href = res.validacion_whatsapp.whatsapp_url;
+                    $('link-whatsapp').style.display = 'inline-block';
+                } else {
+                    $('link-whatsapp').style.display = 'none';
+                }
+            }
+
+            await cargarServicios();
+            await cargar();
+            await cargarLimitesYDisponibilidad($('fecha').value);
+        }
+    });
+
+    (async function init() {
+        await cargarServicios();
+        await cargarLimitesYDisponibilidad();
+        await cargar();
+    })();
+</script>
+{% endblock %}
