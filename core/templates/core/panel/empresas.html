@@ -1,0 +1,233 @@
+{% extends "core/panel/base_panel.html" %}
+{% block titulo %}Empresas y Convenios{% endblock %}
+{% block encabezado %}Gestión de Empresas y Convenios{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta">
+    <h2>Empresas</h2>
+    <form id="form-empresa" class="form-group" novalidate>
+        <input type="hidden" id="e-id">
+        <input type="text" id="e-razon" placeholder="Razón social (Ej. Transportes del Litoral SRL)" required>
+        <input type="text" id="e-cuit" placeholder="CUIT (11 números sin guiones)" inputmode="numeric" maxlength="11" required>
+        <input type="email" id="e-email" placeholder="Email de facturación" required>
+        <input type="text" id="e-tel" placeholder="Teléfono (7 a 13 números)" inputmode="numeric" maxlength="13" required>
+        <button type="submit">Guardar empresa</button>
+        <button type="button" id="e-cancelar" style="display:none; background:#666;" onclick="cancelarEmpresa()">Cancelar</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Razón Social</th>
+                <th>CUIT</th>
+                <th>Email</th>
+                <th>Teléfono</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-empresas"></tbody>
+    </table>
+</div>
+
+<div class="tarjeta" style="margin-top: 24px;">
+    <h2>Convenios</h2>
+    <p id="c-alerta-empresas" style="display:none; color:#b45309; background:#fef3c7; padding:10px; border-radius:6px; margin-bottom:12px;">
+        No hay empresas activas. Cargá o reactivá una empresa antes de registrar un convenio.
+    </p>
+    <form id="form-convenio" class="form-group" novalidate>
+        <input type="hidden" id="c-id">
+        <select id="c-empresa" required></select>
+        <input type="text" id="c-tipo" placeholder="Tipo de facturación (Ej. Mensual, Quincenal)" required>
+        <input type="text" id="c-cond" placeholder="Condiciones (Ej. 10% dto. lavado completo)" required>
+        <button type="submit" id="c-guardar">Guardar convenio</button>
+        <button type="button" id="c-cancelar" style="display:none; background:#666;" onclick="cancelarConvenio()">Cancelar</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Empresa</th>
+                <th>Tipo Facturación</th>
+                <th>Condiciones</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-convenios"></tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API_EMP = '/api/empresas';
+    const API_CONV = '/api/convenios';
+    const $ = id => document.getElementById(id);
+
+    const REGEX_CUIT = /^\d{11}$/;
+    const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const REGEX_TEL = /^\d{7,13}$/;
+
+    let empresas = [];
+    let convenios = [];
+
+    function refrescarSelectEmpresas(empresaEditandoId = null) {
+        const activas = empresas.filter(e => e.activo || e.id_empresa === empresaEditandoId);
+        const sel = $('c-empresa');
+        if (activas.length === 0) {
+            sel.innerHTML = '<option value="">-- Sin empresas activas --</option>';
+            sel.disabled = true;
+            $('c-guardar').disabled = true;
+            $('c-alerta-empresas').style.display = 'block';
+        } else {
+            sel.disabled = false;
+            $('c-guardar').disabled = false;
+            $('c-alerta-empresas').style.display = 'none';
+            sel.innerHTML = '<option value="">Seleccionar empresa...</option>' +
+                activas.map(e => `<option value="${e.id_empresa}">${e.razon_social} (${e.cuit})${e.activo ? '' : ' [Inactiva]'}</option>`).join('');
+        }
+    }
+
+    async function cargarTodo() {
+        const [resEmp, resConv] = await Promise.all([api(API_EMP), api(API_CONV)]);
+        empresas = (resEmp || []).sort((a, b) => b.id_empresa - a.id_empresa);
+        convenios = (resConv || []).sort((a, b) => b.id_convenio - a.id_convenio);
+
+        $('tabla-empresas').innerHTML = empresas.map(e => `
+            <tr class="${e.activo ? '' : 'row-inactive'}">
+                <td>${e.razon_social}</td>
+                <td>${e.cuit}</td>
+                <td>${e.email}</td>
+                <td>${e.telefono}</td>
+                <td class="actions">
+                    <button class="btn-edit" onclick="editarEmpresa(${e.id_empresa})">Editar</button>
+                    <button class="${e.activo ? 'btn-delete' : 'btn-activate'}" onclick="cambiarActivoEmpresa(${e.id_empresa})">
+                        ${e.activo ? 'Eliminar' : 'Activar'}
+                    </button>
+                </td>
+            </tr>`).join('');
+
+        $('tabla-convenios').innerHTML = convenios.map(c => `
+            <tr class="${c.activo ? '' : 'row-inactive'}">
+                <td>${c.empresa_nombre}</td>
+                <td>${c.tipo_facturacion}</td>
+                <td>${c.condiciones}</td>
+                <td class="actions">
+                    <button class="btn-edit" onclick="editarConvenio(${c.id_convenio})">Editar</button>
+                    <button class="${c.activo ? 'btn-delete' : 'btn-activate'}" onclick="cambiarActivoConvenio(${c.id_convenio})">
+                        ${c.activo ? 'Eliminar' : 'Activar'}
+                    </button>
+                </td>
+            </tr>`).join('');
+
+        const editId = $('c-id').value ? parseInt($('c-empresa').value) : null;
+        refrescarSelectEmpresas(editId);
+    }
+
+    // --- EMPRESAS ---
+    function editarEmpresa(id) {
+        const e = empresas.find(x => x.id_empresa === id);
+        $('e-id').value = id;
+        $('e-razon').value = e.razon_social;
+        $('e-cuit').value = e.cuit;
+        $('e-email').value = e.email;
+        $('e-tel').value = e.telefono;
+        $('e-cancelar').style.display = 'inline-block';
+    }
+
+    function cancelarEmpresa() {
+        $('form-empresa').reset();
+        $('e-id').value = '';
+        $('e-cancelar').style.display = 'none';
+    }
+
+    async function cambiarActivoEmpresa(id) {
+        const e = empresas.find(x => x.id_empresa === id);
+        const msg = e.activo
+            ? '¿Dar de baja esta empresa? No se borra de la base de datos.'
+            : '¿Volver a activar esta empresa?';
+        if (confirm(msg) && await api(`${API_EMP}/${id}`, 'PATCH', { activo: !e.activo })) {
+            avisar(e.activo ? 'Empresa dada de baja' : 'Empresa reactivada');
+            cargarTodo();
+        }
+    }
+
+    $('form-empresa').addEventListener('submit', async ev => {
+        ev.preventDefault();
+        const id = $('e-id').value;
+        const datos = {
+            razon_social: $('e-razon').value.trim(),
+            cuit: $('e-cuit').value.trim(),
+            email: $('e-email').value.trim(),
+            telefono: $('e-tel').value.trim(),
+            activo: id ? empresas.find(x => x.id_empresa == id).activo : true
+        };
+
+        if (!datos.razon_social) return avisar('La razón social es obligatoria.', 'error');
+        if (!REGEX_CUIT.test(datos.cuit)) return avisar('El CUIT debe tener exactamente 11 números sin guiones.', 'error');
+        if (!REGEX_EMAIL.test(datos.email)) return avisar('El formato del email no es válido.', 'error');
+        if (!REGEX_TEL.test(datos.telefono)) return avisar('El teléfono debe tener solo números (entre 7 y 13 dígitos).', 'error');
+
+        const duplicado = empresas.some(x => x.cuit === datos.cuit && String(x.id_empresa) !== String(id));
+        if (duplicado) return avisar('Ya existe otra empresa con ese CUIT.', 'error');
+
+        if (await api(id ? `${API_EMP}/${id}` : API_EMP, id ? 'PUT' : 'POST', datos)) {
+            cancelarEmpresa();
+            avisar(id ? 'Empresa actualizada' : 'Empresa guardada');
+            cargarTodo();
+        }
+    });
+
+    // --- CONVENIOS ---
+    function editarConvenio(id) {
+        const c = convenios.find(x => x.id_convenio === id);
+        $('c-id').value = id;
+        refrescarSelectEmpresas(c.empresa);
+        $('c-empresa').value = c.empresa;
+        $('c-tipo').value = c.tipo_facturacion;
+        $('c-cond').value = c.condiciones;
+        $('c-cancelar').style.display = 'inline-block';
+    }
+
+    function cancelarConvenio() {
+        $('form-convenio').reset();
+        $('c-id').value = '';
+        $('c-cancelar').style.display = 'none';
+        refrescarSelectEmpresas();
+    }
+
+    async function cambiarActivoConvenio(id) {
+        const c = convenios.find(x => x.id_convenio === id);
+        const msg = c.activo
+            ? '¿Dar de baja este convenio? No se borra de la base de datos.'
+            : '¿Volver a activar este convenio?';
+        if (confirm(msg) && await api(`${API_CONV}/${id}`, 'PATCH', { activo: !c.activo })) {
+            avisar(c.activo ? 'Convenio dado de baja' : 'Convenio reactivado');
+            cargarTodo();
+        }
+    }
+
+    $('form-convenio').addEventListener('submit', async ev => {
+        ev.preventDefault();
+        const id = $('c-id').value;
+        const empresaId = parseInt($('c-empresa').value);
+        const datos = {
+            empresa: empresaId,
+            tipo_facturacion: $('c-tipo').value.trim(),
+            condiciones: $('c-cond').value.trim(),
+            activo: id ? convenios.find(x => x.id_convenio == id).activo : true
+        };
+
+        if (!datos.empresa) return avisar('Seleccioná una empresa activa.', 'error');
+        if (!datos.tipo_facturacion) return avisar('El tipo de facturación es obligatorio.', 'error');
+        if (!datos.condiciones) return avisar('Las condiciones del convenio son obligatorias.', 'error');
+
+        if (await api(id ? `${API_CONV}/${id}` : API_CONV, id ? 'PUT' : 'POST', datos)) {
+            cancelarConvenio();
+            avisar(id ? 'Convenio actualizado' : 'Convenio guardado');
+            cargarTodo();
+        }
+    });
+
+    cargarTodo();
+</script>
+{% endblock %}

@@ -39,6 +39,10 @@
             <a href="{% url 'home' %}"><svg><use href="#i-web"/></svg>Ver web pública</a>
             <a href="/admin/"><svg><use href="#i-admin"/></svg>Admin Django</a>
         </nav>
+        <div class="usuario">
+            <span>{{ request.user.get_username }}</span>
+            <a href="{% url 'logout' %}">Cerrar sesión</a>
+        </div>
     </aside>
 
     <main>

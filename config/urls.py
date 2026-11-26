@@ -7,6 +7,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("api.urls")),
     path("", core_views.home, name="home"),
+    path("login/", core_views.login_view, name="login"),
+    path("logout/", core_views.logout_view, name="logout"),
 
     # Link viejo del home: redirige al panel
     path("servicios/", RedirectView.as_view(url="/panel/servicios/"), name="crud_servicios"),

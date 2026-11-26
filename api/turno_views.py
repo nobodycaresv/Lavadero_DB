@@ -3,6 +3,7 @@ from datetime import datetime
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 
 from catalogos.models import Estado
@@ -37,6 +38,13 @@ class TurnoViewSet(
         .order_by("-fecha", "hora", "-id_turno")
     )
     serializer_class = TurnoSerializer
+
+    def get_permissions(self):
+        # Públicas: reservar y ver disponibilidad (formulario de la web).
+        # El resto (listar, ver, cambiar estado, cancelar) es solo para el personal.
+        if self.action in ("create", "disponibilidad"):
+            return [AllowAny()]
+        return super().get_permissions()
 
     def create(self, request, *args, **kwargs):
         serializer = CrearTurnoSerializer(data=request.data)

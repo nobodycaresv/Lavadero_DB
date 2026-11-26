@@ -1,0 +1,180 @@
+{% extends "core/panel/base_panel.html" %}
+{% block titulo %}Facturas{% endblock %}
+{% block encabezado %}Gestión de Facturas{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta">
+    <form id="form-factura" class="form-group" novalidate>
+        <input type="hidden" id="f-id">
+        <select id="f-orden" required></select>
+        <select id="f-cliente" required></select>
+        <select id="f-convenio">
+            <option value="">Particular (sin convenio)</option>
+        </select>
+        <input type="text" id="f-numero" placeholder="N° Factura (Ej. FC-0001-00000123)" maxlength="30" required>
+        <input type="date" id="f-fecha" required>
+        <input type="number" id="f-total" placeholder="Total ($)" step="0.01" min="0.01" required>
+        <button type="submit">Emitir factura</button>
+        <button type="button" id="f-cancelar" style="display:none; background:#666;" onclick="cancelarFactura()">Cancelar</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>N° Factura</th>
+                <th>Fecha</th>
+                <th>Orden</th>
+                <th>Cliente</th>
+                <th>Modalidad / Convenio</th>
+                <th>Total</th>
+                <th>Email</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-facturas"></tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API_FAC = '/api/facturas';
+    const API_ORD = '/api/facturas-ordenes';
+    const API_CLI = '/api/facturas-clientes';
+    const API_CONV = '/api/convenios';
+    const $ = id => document.getElementById(id);
+
+    let facturas = [];
+    let ordenes = [];
+    let clientes = [];
+    let convenios = [];
+
+    function hoyISO() {
+        return new Date().toISOString().split('T')[0];
+    }
+
+    function refrescarSelects(ordenEditandoId = null, convenioEditandoId = null) {
+        const ordenesDisp = ordenes.filter(o => !o.ya_facturada || o.id_orden === ordenEditandoId);
+        $('f-orden').innerHTML = '<option value="">Seleccionar orden de trabajo...</option>' +
+            ordenesDisp.map(o => `<option value="${o.id_orden}">Orden #${o.id_orden} - ${o.patente} (${o.servicio})</option>`).join('');
+
+        $('f-cliente').innerHTML = '<option value="">Seleccionar cliente...</option>' +
+            clientes.map(c => `<option value="${c.id_cliente}">${c.nombre_completo}${c.email ? ' (' + c.email + ')' : ''}</option>`).join('');
+
+        const convActivos = convenios.filter(c => c.activo || c.id_convenio === convenioEditandoId);
+        $('f-convenio').innerHTML = '<option value="">Particular (sin convenio)</option>' +
+            convActivos.map(c => `<option value="${c.id_convenio}">${c.empresa_nombre} - ${c.tipo_facturacion}</option>`).join('');
+    }
+
+    // Al elegir una orden de trabajo, autocompleta cliente y monto sugerido
+    $('f-orden').addEventListener('change', () => {
+        const idOrden = parseInt($('f-orden').value);
+        const ord = ordenes.find(o => o.id_orden === idOrden);
+        if (ord) {
+            $('f-cliente').value = ord.cliente_id;
+            if (!$('f-total').value || parseFloat($('f-total').value) <= 0) {
+                $('f-total').value = ord.total_sugerido.toFixed(2);
+            }
+        }
+    });
+
+    async function cargarTodo() {
+        const [resFac, resOrd, resCli, resConv] = await Promise.all([
+            api(API_FAC),
+            api(API_ORD),
+            api(API_CLI),
+            api(API_CONV)
+        ]);
+        facturas = (resFac || []).sort((a, b) => b.id_factura - a.id_factura);
+        ordenes = resOrd || [];
+        clientes = resCli || [];
+        convenios = resConv || [];
+
+        $('tabla-facturas').innerHTML = facturas.map(f => `
+            <tr>
+                <td><strong>${f.numero_factura}</strong></td>
+                <td>${f.fecha_emision}</td>
+                <td>#${f.orden}</td>
+                <td>${f.cliente_nombre}</td>
+                <td>${f.convenio_detalle}</td>
+                <td>$${Number(f.total).toFixed(2)}</td>
+                <td>${f.enviada_por_email ? 'Enviada (' + (f.email_destino || 'OK') + ')' : 'Pendiente'}</td>
+                <td class="actions">
+                    <button class="btn-edit" onclick="editarFactura(${f.id_factura})">Editar</button>
+                    <button class="btn-activate" onclick="enviarEmail(${f.id_factura})">
+                        ${f.enviada_por_email ? 'Reenviar mail' : 'Enviar mail'}
+                    </button>
+                </td>
+            </tr>`).join('');
+
+        refrescarSelects();
+        if (!$('f-id').value && !$('f-fecha').value) {
+            $('f-fecha').value = hoyISO();
+        }
+    }
+
+    function editarFactura(id) {
+        const f = facturas.find(x => x.id_factura === id);
+        $('f-id').value = id;
+        refrescarSelects(f.orden, f.convenio);
+        $('f-orden').value = f.orden;
+        $('f-cliente').value = f.cliente;
+        $('f-convenio').value = f.convenio || '';
+        $('f-numero').value = f.numero_factura;
+        $('f-fecha').value = f.fecha_emision;
+        $('f-total').value = f.total;
+        $('f-cancelar').style.display = 'inline-block';
+    }
+
+    function cancelarFactura() {
+        $('form-factura').reset();
+        $('f-id').value = '';
+        $('f-fecha').value = hoyISO();
+        $('f-cancelar').style.display = 'none';
+        refrescarSelects();
+    }
+
+    async function enviarEmail(id) {
+        const f = facturas.find(x => x.id_factura === id);
+        if (!f.email_destino) {
+            return avisar('No hay un correo registrado en el cliente ni en la empresa del convenio.', 'error');
+        }
+        const res = await api(`${API_FAC}/${id}/enviar-email`, 'POST');
+        if (res) {
+            avisar(`Factura enviada por email a ${res.email_destino}`);
+            cargarTodo();
+        }
+    }
+
+    $('form-factura').addEventListener('submit', async ev => {
+        ev.preventDefault();
+        const id = $('f-id').value;
+        const datos = {
+            orden: parseInt($('f-orden').value),
+            cliente: parseInt($('f-cliente').value),
+            convenio: $('f-convenio').value ? parseInt($('f-convenio').value) : null,
+            numero_factura: $('f-numero').value.trim(),
+            fecha_emision: $('f-fecha').value,
+            total: parseFloat($('f-total').value),
+            enviada_por_email: id ? facturas.find(x => x.id_factura == id).enviada_por_email : false
+        };
+
+        if (!datos.orden) return avisar('Seleccioná una orden de trabajo.', 'error');
+        if (!datos.cliente) return avisar('Seleccioná un cliente.', 'error');
+        if (!datos.numero_factura) return avisar('El número de factura es obligatorio.', 'error');
+        if (!datos.fecha_emision) return avisar('La fecha de emisión es obligatoria.', 'error');
+        if (isNaN(datos.total) || datos.total <= 0) return avisar('El total debe ser mayor a $0.', 'error');
+
+        const dupNum = facturas.some(x => x.numero_factura.toLowerCase() === datos.numero_factura.toLowerCase() && String(x.id_factura) !== String(id));
+        if (dupNum) return avisar('Ya existe una factura con ese número.', 'error');
+
+        if (await api(id ? `${API_FAC}/${id}` : API_FAC, id ? 'PUT' : 'POST', datos)) {
+            cancelarFactura();
+            avisar(id ? 'Factura actualizada' : 'Factura emitida correctamente');
+            cargarTodo();
+        }
+    });
+
+    cargarTodo();
+</script>
+{% endblock %}

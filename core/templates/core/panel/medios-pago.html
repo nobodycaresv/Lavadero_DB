@@ -1,0 +1,73 @@
+{% extends "core/panel/base_panel.html" %}
+{% block titulo %}Medios de Pago{% endblock %}
+{% block encabezado %}Gestión de Medios de Pago{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta">
+    <form id="form" class="form-group">
+        <input type="hidden" id="id">
+        <input type="text" id="nombre" placeholder="Nombre del medio de pago (Ej. Transferencia Bancaria)" maxlength="30" required>
+        <button type="submit">Guardar</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr><th>Medio de Pago</th><th>Acciones</th></tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API = '/api/medios-pago';
+    const $ = id => document.getElementById(id);
+    let lista = [];
+
+    async function cargar() {
+        lista = (await api(API) || []).sort((a, b) => b.id_medio_pago - a.id_medio_pago);
+        $('tabla').innerHTML = lista.map(m => `
+            <tr>
+                <td>${m.nombre}</td>
+                <td class="actions">
+                    <button class="btn-edit" onclick="editar(${m.id_medio_pago})">Editar</button>
+                    <button class="btn-delete" onclick="eliminar(${m.id_medio_pago})">Eliminar</button>
+                </td>
+            </tr>`).join('');
+    }
+
+    function editar(id) {
+        const m = lista.find(x => x.id_medio_pago === id);
+        $('id').value = id;
+        $('nombre').value = m.nombre;
+    }
+
+    async function eliminar(id) {
+        if (confirm('¿Eliminar este medio de pago?') && await api(`${API}/${id}`, 'DELETE')) {
+            avisar('Medio de pago eliminado');
+            cargar();
+        }
+    }
+
+    $('form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = $('id').value;
+        const datos = {
+            nombre: $('nombre').value.trim()
+        };
+        if (!datos.nombre) {
+            avisar('Completá el nombre del medio de pago');
+            return;
+        }
+        if (await api(id ? `${API}/${id}` : API, id ? 'PUT' : 'POST', datos)) {
+            e.target.reset();
+            $('id').value = '';
+            avisar('Medio de pago guardado');
+            cargar();
+        }
+    });
+
+    cargar();
+</script>
+{% endblock %}

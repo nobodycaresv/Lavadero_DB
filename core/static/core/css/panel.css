@@ -88,6 +88,11 @@ aside a.activo::before {
 }
 aside a.activo svg { color: var(--rojo-claro); }
 
+.usuario { margin-top: 22px; padding: 14px 12px 0; border-top: 1px solid var(--borde); font-size: 13px; color: var(--gris); }
+.usuario span { display: block; margin-bottom: 4px; color: var(--blanco); font-weight: 600; }
+aside .usuario a { padding: 6px 0; font-size: 13px; color: var(--rojo-claro); }
+aside .usuario a:hover { background: none; transform: none; text-decoration: underline; }
+
 /* ---------- Contenido ---------- */
 main {
     flex: 1;
