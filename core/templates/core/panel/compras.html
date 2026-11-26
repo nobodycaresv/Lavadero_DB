@@ -1,0 +1,121 @@
+{% extends "core/panel/base_panel.html" %}
+{% block titulo %}Compras{% endblock %}
+{% block encabezado %}Compras de Insumos{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta">
+    <h2 class="subtitulo">Registrar compra</h2>
+    <form id="form">
+        <div class="form-group">
+            <select id="proveedor" required></select>
+        </div>
+
+        <div id="lineas"></div>
+
+        <div class="form-group">
+            <button type="button" id="agregar">+ Agregar insumo</button>
+            <strong id="total">Total: $0</strong>
+            <button type="submit">Registrar compra</button>
+        </div>
+    </form>
+    <p id="aviso-vacio" hidden>
+        No hay proveedores o insumos cargados todavía. Cargalos primero para poder registrar una compra.
+    </p>
+</div>
+
+<div class="tarjeta">
+    <h2 class="subtitulo">Compras registradas</h2>
+    <table>
+        <thead>
+            <tr><th>N°</th><th>Fecha</th><th>Proveedor</th><th>Detalle</th><th>Total</th></tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API = '/api/compras';
+    const $ = id => document.getElementById(id);
+    const esc = t => String(t ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+    const num = n => Number(n).toLocaleString('es-AR', { maximumFractionDigits: 2 });
+    let insumos = [];
+
+    async function cargarOpciones() {
+        const o = await api(`${API}/opciones`);
+        if (!o) return;
+        insumos = o.insumos;
+        $('proveedor').innerHTML = '<option value="">Elegí un proveedor</option>' +
+            o.proveedores.map(p => `<option value="${p.id_proveedor}">${esc(p.nombre)}</option>`).join('');
+        $('aviso-vacio').hidden = o.proveedores.length > 0 && insumos.length > 0;
+        $('lineas').innerHTML = '';
+        if (insumos.length) agregarLinea();
+        calcularTotal();
+    }
+
+    function agregarLinea() {
+        const fila = document.createElement('div');
+        fila.className = 'form-group linea';
+        fila.innerHTML = `
+            <select class="l-insumo" required>
+                <option value="">Elegí un insumo</option>
+                ${insumos.map(i => `<option value="${i.id_insumo}" data-costo="${i.costo_unitario}">${esc(i.nombre)} (${esc(i.unidad_medida)})</option>`).join('')}
+            </select>
+            <input type="number" class="l-cantidad" placeholder="Cantidad" step="0.01" min="0.01" required>
+            <input type="number" class="l-precio" placeholder="Precio unitario ($)" step="0.01" min="0" required>
+            <button type="button" class="btn-delete l-quitar">Quitar</button>`;
+        fila.querySelector('.l-insumo').addEventListener('change', e => {
+            // sugiere el último costo conocido del insumo
+            const costo = e.target.selectedOptions[0].dataset.costo;
+            if (costo !== undefined) fila.querySelector('.l-precio').value = costo;
+            calcularTotal();
+        });
+        fila.querySelectorAll('input').forEach(i => i.addEventListener('input', calcularTotal));
+        fila.querySelector('.l-quitar').addEventListener('click', () => {
+            if (document.querySelectorAll('.linea').length > 1) { fila.remove(); calcularTotal(); }
+        });
+        $('lineas').appendChild(fila);
+    }
+
+    function leerLineas() {
+        return [...document.querySelectorAll('.linea')].map(f => ({
+            insumo: parseInt(f.querySelector('.l-insumo').value),
+            cantidad: parseFloat(f.querySelector('.l-cantidad').value),
+            precio_unitario: parseFloat(f.querySelector('.l-precio').value)
+        }));
+    }
+
+    function calcularTotal() {
+        const total = leerLineas().reduce((s, l) => s + (l.cantidad || 0) * (l.precio_unitario || 0), 0);
+        $('total').textContent = 'Total: $' + num(total);
+    }
+
+    async function cargar() {
+        const lista = await api(API) || [];
+        $('tabla').innerHTML = lista.map(c => `
+            <tr>
+                <td>#${c.id_compra}</td>
+                <td>${new Date(c.fecha).toLocaleString('es-AR')}</td>
+                <td>${esc(c.proveedor_nombre)}</td>
+                <td>${c.detalles.map(d => `${esc(d.insumo_nombre)} x${num(d.cantidad)} ($${num(d.precio_unitario)})`).join('<br>')}</td>
+                <td>$${num(c.total)}</td>
+            </tr>`).join('');
+    }
+
+    $('agregar').addEventListener('click', agregarLinea);
+
+    $('form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const datos = { proveedor: parseInt($('proveedor').value), detalles: leerLineas() };
+        if (await api(API, 'POST', datos)) {
+            avisar('Compra registrada y stock actualizado');
+            cargarOpciones();   // recarga los insumos con su stock/costo nuevo
+            cargar();
+        }
+    });
+
+    cargarOpciones();
+    cargar();
+</script>
+{% endblock %}
