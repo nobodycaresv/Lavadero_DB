@@ -521,12 +521,14 @@ body {
 
 .mensaje-exito {
     margin-top: 1.5rem;
-    padding: 1rem 1.2rem;
-    background-color: rgba(189, 32, 27, 0.15);
-    border: 1px solid var(--rojo-rosario);
-    border-radius: 4px;
+    padding: 1.35rem 1.4rem;
+    background-color: var(--negro-card);
+    border: 1px solid rgba(200, 200, 200, 0.25);
+    border-left: 4px solid var(--rojo-rosario);
+    border-radius: 6px;
     color: var(--blanco);
     font-size: 0.95rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 /* Footer */
@@ -644,4 +646,172 @@ body {
         border-right: none;
         border-bottom: 2px solid var(--rojo-rosario);
     }
+}
+
+/* =============================================
+   Estilos específicos del formulario de turnos
+   ============================================= */
+
+.fila-dos-columnas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.texto-mayuscula {
+    text-transform: uppercase;
+}
+
+.grupo-fecha-turno {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.grupo-fecha-turno .campo-fecha-corto {
+    width: 58px;
+    text-align: center;
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+}
+
+.grupo-fecha-turno .campo-fecha-anio {
+    width: 84px;
+    text-align: center;
+    padding-left: 0.4rem;
+    padding-right: 0.4rem;
+}
+
+.separador-fecha {
+    color: var(--gris-metalico);
+    font-weight: 700;
+    user-select: none;
+}
+
+.ayuda-campo {
+    font-size: 0.78rem;
+    color: var(--gris-tenue);
+}
+
+.campo-grupo select option:disabled {
+    color: #ff6b66;
+    background-color: #1a0909;
+}
+
+.caja-errores {
+    margin-bottom: 1.2rem;
+    padding: 0.85rem 1rem;
+    background-color: rgba(189, 32, 27, 0.14);
+    border: 1px solid var(--rojo-rosario);
+    border-radius: 4px;
+    color: #ffb3b0;
+    font-size: 0.85rem;
+}
+
+.caja-errores ul {
+    margin: 0.4rem 0 0 1.2rem;
+}
+
+.btn-rojo:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.btn-rojo:disabled:hover {
+    background-color: var(--rojo-rosario);
+    transform: none;
+    box-shadow: none;
+}
+
+.titulo-confirmacion {
+    font-family: 'Oswald', sans-serif;
+    font-size: 1.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.8rem;
+}
+
+.resumen-whatsapp {
+    background-color: var(--negro-institucional);
+    border: 1px solid rgba(200, 200, 200, 0.25);
+    border-radius: 4px;
+    padding: 0.9rem 1rem;
+    font-family: 'Lato', sans-serif;
+    font-size: 0.9rem;
+    color: var(--blanco);
+    white-space: pre-wrap;
+    margin-bottom: 1rem;
+}
+
+.acciones-confirmacion {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.btn-whatsapp {
+    display: inline-block;
+    background-color: #198754;
+    color: var(--blanco);
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 0.92rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.btn-whatsapp:hover {
+    background-color: #146c43;
+    color: var(--blanco);
+    transform: translateY(-2px);
+}
+
+.btn-secundario-turno {
+    background-color: transparent;
+    color: var(--gris-metalico);
+    border: 1px solid var(--gris-metalico);
+    font-family: 'Oswald', sans-serif;
+    font-size: 0.88rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.72rem 1.2rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+}
+
+.btn-secundario-turno:hover {
+    border-color: var(--blanco);
+    color: var(--blanco);
+}
+
+@media (max-width: 600px) {
+    .fila-dos-columnas {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Evitar fondo blanco por autocompletado o foco del navegador */
+#form-contacto input,
+#form-contacto select {
+    background-color: var(--negro-institucional) !important;
+    color: var(--blanco) !important;
+    color-scheme: dark;
+}
+
+#form-contacto input:-webkit-autofill,
+#form-contacto input:-webkit-autofill:hover,
+#form-contacto input:-webkit-autofill:focus,
+#form-contacto input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px var(--negro-institucional) inset !important;
+    -webkit-text-fill-color: var(--blanco) !important;
+    caret-color: var(--blanco);
+    transition: background-color 9999s ease-out 0s;
 }

@@ -1,3 +1,4 @@
+{% csrf_token %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -140,7 +141,7 @@
         </div>
 
         <div class="contacto-formulario">
-          <form id="form-contacto" novalidate aria-label="Formulario de contacto y turnos">
+          <form id="form-contacto" novalidate aria-label="Formulario de reserva de turnos">
 
             <div class="campo-grupo">
               <label for="nombre">Nombre completo *</label>
@@ -148,74 +149,160 @@
                 type="text"
                 id="nombre"
                 name="nombre"
-                placeholder="Tu nombre"
+                placeholder="Tu nombre y apellido"
+                maxlength="80"
                 autocomplete="name"
                 aria-required="true"
               />
               <span class="error-msg" id="error-nombre" role="alert"></span>
             </div>
 
-            <div class="campo-grupo">
-              <label for="email">Correo electrónico *</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                placeholder="tu@email.com"
-                autocomplete="email"
-                aria-required="true"
-              />
-              <span class="error-msg" id="error-email" role="alert"></span>
+            <div class="fila-dos-columnas">
+              <div class="campo-grupo">
+                <label for="email">Correo electrónico</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="tu@email.com"
+                  maxlength="100"
+                  autocomplete="email"
+                  aria-required="true"
+                />
+                <span class="error-msg" id="error-email" role="alert"></span>
+              </div>
+
+              <div class="campo-grupo">
+                <label for="telefono">Teléfono / WhatsApp </label>
+                <input
+                  type="tel"
+                  id="telefono"
+                  name="telefono"
+                  placeholder="3871234567"
+                  maxlength="15"
+                  inputmode="numeric"
+                  autocomplete="tel"
+                  aria-required="true"
+                />
+                <span class="error-msg" id="error-telefono" role="alert"></span>
+              </div>
+            </div>
+
+            <div class="fila-dos-columnas">
+              <div class="campo-grupo">
+                <label for="patente">Patente</label>
+                <input
+                  type="text"
+                  id="patente"
+                  name="patente"
+                  placeholder="Ej: AB123CD o ABC123"
+                  maxlength="8"
+                  class="texto-mayuscula"
+                  aria-required="true"
+                />
+                <span class="error-msg" id="error-patente" role="alert"></span>
+              </div>
+
+              <div class="campo-grupo">
+                <label for="vehiculo">Vehículo</label>
+                <input
+                  type="text"
+                  id="vehiculo"
+                  name="vehiculo"
+                  placeholder="Ej: Fiat Cronos o Logan"
+                  maxlength="50"
+                  aria-required="true"
+                />
+                <span class="error-msg" id="error-vehiculo" role="alert"></span>
+              </div>
             </div>
 
             <div class="campo-grupo">
-              <label for="telefono">Teléfono / WhatsApp (opcional)</label>
-              <input
-                type="tel"
-                id="telefono"
-                name="telefono"
-                placeholder="+54 9 387 ..."
-                autocomplete="tel"
-              />
-            </div>
-
-            <div class="campo-grupo">
-              <label for="interes">¿Qué servicio buscás?</label>
-              <select id="interes" name="interes" aria-label="Seleccioná tu interés">
-                <option value="">-- Elegí una opción --</option>
-                <option value="consulta">Consulta general / Presupuesto</option>
-                <option value="pedido">Reservar turno de servicio</option>
-                <option value="tratamiento">Tratamiento Acrílico / Cerámico</option>
-                <option value="flota">Convenio empresas / Flotas</option>
+              <label for="servicio">¿Qué servicio buscás? </label>
+              <select id="servicio" name="servicio" aria-label="Seleccioná el servicio" aria-required="true">
+                <option value=""> Elegí una opción: </option>
+                {% for s in servicios %}
+                <option value="{{ s.id_servicio }}" data-nombre="{{ s.nombre_servicio }}">
+                  {{ s.nombre_servicio }} ({{ s.duracion }} min - ${{ s.precio }})
+                </option>
+                {% endfor %}
               </select>
+              <span class="error-msg" id="error-servicio" role="alert"></span>
             </div>
 
-            <div class="campo-grupo">
-              <label for="mensaje">Vehículo y consulta *</label>
-              <textarea
-                id="mensaje"
-                name="mensaje"
-                rows="4"
-                placeholder="Indicanos marca, modelo y el servicio que te interesa..."
-                aria-required="true"
-              ></textarea>
-              <span class="error-msg" id="error-mensaje" role="alert"></span>
+            <div class="fila-dos-columnas">
+              <div class="campo-grupo">
+                <label for="fecha-dia">Fecha del turno (DD / MM / AAAA) *</label>
+                <div class="grupo-fecha-turno">
+                  <input
+                    type="text"
+                    id="fecha-dia"
+                    class="campo-fecha-corto"
+                    placeholder="DD"
+                    maxlength="2"
+                    inputmode="numeric"
+                    aria-label="Día del turno"
+                  />
+                  <span class="separador-fecha">/</span>
+                  <input
+                    type="text"
+                    id="fecha-mes"
+                    class="campo-fecha-corto"
+                    placeholder="MM"
+                    maxlength="2"
+                    inputmode="numeric"
+                    aria-label="Mes del turno"
+                  />
+                  <span class="separador-fecha">/</span>
+                  <input
+                    type="text"
+                    id="fecha-anio"
+                    class="campo-fecha-anio"
+                    placeholder="AAAA"
+                    maxlength="4"
+                    inputmode="numeric"
+                    aria-label="Año del turno"
+                  />
+                </div>
+                <small class="ayuda-campo" id="ayuda-rango-fecha"></small>
+                <span class="error-msg" id="error-fecha" role="alert"></span>
+              </div>
+
+              <div class="campo-grupo">
+                <label for="hora-turno">Horario: </label>
+                <select id="hora-turno" name="hora-turno" aria-label="Seleccioná el bloque horario" aria-required="true">
+                  <option value=""> Cargando horarios </option>
+                </select>
+                <small class="ayuda-campo">Atención de 09:00 a 19:00 hs.</small>
+                <span class="error-msg" id="error-hora" role="alert"></span>
+              </div>
             </div>
 
             <div class="campo-grupo campo-check">
               <input type="checkbox" id="acepto" name="acepto" aria-required="true" />
-              <label for="acepto">Acepto recibir respuesta por email o WhatsApp</label>
+              <label for="acepto">Confirmo los datos y quiero enviar la confirmación por WhatsApp *</label>
               <span class="error-msg" id="error-acepto" role="alert"></span>
             </div>
 
-            <button type="submit" class="btn-rojo" id="btn-enviar">
+            <div id="resumen-errores" class="caja-errores oculto" role="alert"></div>
+
+            <button type="submit" class="btn-rojo" id="btn-enviar" disabled>
               Solicitar turno
             </button>
 
           </form>
 
           <div id="mensaje-exito" class="mensaje-exito oculto" role="status" aria-live="polite">
-            ¡Gracias! Tu solicitud fue enviada. Nos comunicamos pronto para confirmar tu turno.
+            <p class="titulo-confirmacion">¡Tu solicitud de turno quedó registrada en estado Pendiente!</p>
+            <pre id="detalle-whatsapp" class="resumen-whatsapp"></pre>
+            <div class="acciones-confirmacion">
+              <a id="btn-abrir-whatsapp" href="#" target="_blank" rel="noopener" class="btn-whatsapp">
+                Enviar confirmación por WhatsApp
+              </a>
+              <button type="button" id="btn-nuevo-turno" class="btn-secundario-turno">
+                Sacar otro turno
+              </button>
+            </div>
           </div>
 
         </div>
