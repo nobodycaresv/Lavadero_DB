@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rosario Estética Vehicular - Gestión</title>
+    <style>
+        :root {
+            --bg-black: #000000;
+            --card-dark: #121212;
+            --red-rosario: #BD201B;
+            --red-hover: #9c1916;
+            --text-white: #FFFFFF;
+            --text-gray: #C8C8C8;
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-white);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            border-bottom: 2px solid var(--red-rosario);
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--text-white);
+            font-size: 28px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        p.subtitle {
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+
+        .card {
+            background-color: var(--card-dark);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 10px rgba(189, 32, 27, 0.1);
+        }
+
+        h2 {
+            color: var(--red-rosario);
+            font-size: 20px;
+            margin-top: 0;
+            border-bottom: 1px solid #222;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            accent-color: var(--red-rosario);
+        }
+
+        .checkbox-group label {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-gray);
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            background-color: #1a1a1a;
+            border: 1px solid var(--red-rosario);
+            border-radius: 6px;
+            color: var(--text-white);
+            font-size: 15px;
+            box-sizing: border-box;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #ff332e;
+            box-shadow: 0 0 5px rgba(189, 32, 27, 0.5);
+        }
+
+        button {
+            background-color: var(--red-rosario);
+            color: var(--text-white);
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        button:hover {
+            background-color: var(--red-hover);
+        }
+
+        .feedback-msg {
+            margin-top: 12px;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            display: none;
+            white-space: pre-line;
+        }
+
+        .feedback-error {
+            display: block;
+            background-color: rgba(189, 32, 27, 0.18);
+            border: 1px solid var(--red-rosario);
+            color: #ff9c99;
+        }
+
+        .feedback-ok {
+            display: block;
+            background-color: rgba(46, 160, 67, 0.18);
+            border: 1px solid #2ea043;
+            color: #9be9a8;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #222;
+        }
+
+        th {
+            background-color: #1a1a1a;
+            color: var(--red-rosario);
+        }
+
+        td {
+            color: var(--text-gray);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Rosario Estética Vehicular</h1>
+            <p class="subtitle">Panel de Control y Gestión - Catálogos y Finanzas</p>
+        </header>
+
+        <!-- Formulario para Estados -->
+        <div class="card">
+            <h2>Registrar Nuevo Estado</h2>
+            <form id="form-estado" novalidate>
+                <div class="form-group">
+                    <label for="tipo">Ámbito / Tipo (turno, orden, pago):</label>
+                    <input type="text" id="tipo" required placeholder="Ej. turno">
+                </div>
+                <div class="form-group">
+                    <label for="nombre-estado">Nombre del Estado:</label>
+                    <input type="text" id="nombre-estado" required placeholder="Ej. Confirmado">
+                </div>
+                <button type="submit" id="btnGuardarEstado">Guardar Estado</button>
+            </form>
+            <div id="feedback-estado" class="feedback-msg"></div>
+        </div>
+
+        <!-- Formulario para Medios de Pago -->
+        <div class="card">
+            <h2>Registrar Medio de Pago</h2>
+            <form id="form-medio-pago" novalidate>
+                <div class="form-group">
+                    <label for="nombre-medio-pago">Nombre del Medio de Pago:</label>
+                    <input type="text" id="nombre-medio-pago" required placeholder="Ej. Transferencia Bancaria">
+                </div>
+                <button type="submit" id="btnGuardarMedioPago">Guardar Medio de Pago</button>
+            </form>
+            <div id="feedback-medio-pago" class="feedback-msg"></div>
+        </div>
+
+        <!-- Formulario para Pagos -->
+        <div class="card">
+            <h2>Registrar Pago</h2>
+            <form id="form-pago" novalidate>
+                <div class="form-group">
+                    <label for="pago-factura">ID Factura:</label>
+                    <input type="number" id="pago-factura" min="1" required placeholder="Ej. 1">
+                </div>
+                <div class="form-group">
+                    <label for="pago-medio">ID Medio de Pago:</label>
+                    <input type="number" id="pago-medio" min="1" required placeholder="Ej. 1">
+                </div>
+                <div class="form-group">
+                    <label for="pago-estado">ID Estado:</label>
+                    <input type="number" id="pago-estado" min="1" required placeholder="Ej. 1">
+                </div>
+                <div class="form-group">
+                    <label for="pago-monto">Monto:</label>
+                    <input type="number" id="pago-monto" step="0.01" min="0" required placeholder="Ej. 15000.00">
+                </div>
+                <div class="form-group">
+                    <label for="pago-fecha-hora">Fecha y Hora:</label>
+                    <input type="datetime-local" id="pago-fecha-hora" required>
+                </div>
+                <div class="form-group">
+                    <label for="pago-concepto">Concepto (opcional):</label>
+                    <input type="text" id="pago-concepto" maxlength="100" placeholder="Ej. Seña o cancelación total">
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="pago-adelanto">
+                    <label for="pago-adelanto">Es pago de adelanto</label>
+                </div>
+                <button type="submit" id="btnGuardarPago">Guardar Pago</button>
+            </form>
+            <div id="feedback-pago" class="feedback-msg"></div>
+        </div>
+
+        <!-- Listado de Estados -->
+        <div class="card">
+            <h2>Listado de Estados Actuales</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tipo</th>
+                            <th>Nombre</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-estados">
+                        <tr>
+                            <td colspan="3" style="text-align: center;">Cargando estados...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Listado de Medios de Pago -->
+        <div class="card">
+            <h2>Listado de Medios de Pago Actuales</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-medios-pago">
+                        <tr>
+                            <td colspan="2" style="text-align: center;">Cargando medios de pago...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Listado de Pagos -->
+        <div class="card">
+            <h2>Listado de Pagos Actuales</h2>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Factura</th>
+                            <th>Medio de Pago</th>
+                            <th>Estado</th>
+                            <th>Monto</th>
+                            <th>Fecha y Hora</th>
+                            <th>Concepto</th>
+                            <th>Adelanto</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-pagos">
+                        <tr>
+                            <td colspan="8" style="text-align: center;">Cargando pagos...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        const LABELS_CAMPOS = {
+            tipo: 'Ámbito / Tipo',
+            nombre: 'Nombre',
+            nombre_servicio: 'Nombre del servicio',
+            factura: 'Factura',
+            medio_pago: 'Medio de pago',
+            estado: 'Estado',
+            monto: 'Monto',
+            fecha_hora: 'Fecha y hora',
+            concepto: 'Concepto',
+            pago_adelanto: 'Pago de adelanto',
+            non_field_errors: 'Validación',
+            detail: 'Detalle'
+        };
+
+        function formatearErroresDRF(data, fallbackMsg) {
+            if (!data || typeof data !== 'object') {
+                return fallbackMsg;
+            }
+
+            const lineas = [];
+            for (const [campo, mensajes] of Object.entries(data)) {
+                const etiqueta = LABELS_CAMPOS[campo] || campo;
+                if (Array.isArray(mensajes)) {
+                    mensajes.forEach(msg => lineas.push(`• ${etiqueta}: ${msg}`));
+                } else if (typeof mensajes === 'string') {
+                    lineas.push(`• ${etiqueta}: ${mensajes}`);
+                } else if (mensajes && typeof mensajes === 'object') {
+                    lineas.push(`• ${etiqueta}: ${JSON.stringify(mensajes)}`);
+                }
+            }
+
+            return lineas.length > 0 ? lineas.join('\n') : fallbackMsg;
+        }
+
+        function mostrarFeedback(elementId, mensaje, esError) {
+            const box = document.getElementById(elementId);
+            if (!box) return;
+            box.textContent = mensaje;
+            box.className = 'feedback-msg ' + (esError ? 'feedback-error' : 'feedback-ok');
+        }
+
+        function cargarEstados() {
+            const tbody = document.getElementById('tabla-estados');
+            if (!tbody) return;
+
+            fetch('/api/estados')
+                .then(res => res.ok ? res.json() : Promise.reject(res))
+                .then(data => {
+                    const lista = Array.isArray(data) ? data : (data.results || []);
+                    if (lista.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No hay estados cargados todavía.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = lista.map(item => `
+                        <tr>
+                            <td>${item.id_estado ?? item.id ?? ''}</td>
+                            <td>${item.tipo ?? ''}</td>
+                            <td>${item.nombre ?? ''}</td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(() => {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align: center;">No se pudieron cargar los estados.</td></tr>';
+                });
+        }
+
+        function cargarMediosPago() {
+            const tbody = document.getElementById('tabla-medios-pago');
+            if (!tbody) return;
+
+            fetch('/api/medios-pago')
+                .then(res => res.ok ? res.json() : Promise.reject(res))
+                .then(data => {
+                    const lista = Array.isArray(data) ? data : (data.results || []);
+                    if (lista.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="2" style="text-align: center;">No hay medios de pago cargados todavía.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = lista.map(item => `
+                        <tr>
+                            <td>${item.id_medio_pago ?? item.id ?? ''}</td>
+                            <td>${item.nombre ?? ''}</td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(() => {
+                    tbody.innerHTML = '<tr><td colspan="2" style="text-align: center;">No se pudieron cargar los medios de pago.</td></tr>';
+                });
+        }
+
+        function cargarPagos() {
+            const tbody = document.getElementById('tabla-pagos');
+            if (!tbody) return;
+
+            fetch('/api/pagos')
+                .then(res => res.ok ? res.json() : Promise.reject(res))
+                .then(data => {
+                    const lista = Array.isArray(data) ? data : (data.results || []);
+                    if (lista.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No hay pagos cargados todavía.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = lista.map(item => `
+                        <tr>
+                            <td>${item.id_pago ?? item.id ?? ''}</td>
+                            <td>${item.factura ?? ''}</td>
+                            <td>${item.medio_pago ?? ''}</td>
+                            <td>${item.estado ?? ''}</td>
+                            <td>${item.monto ?? ''}</td>
+                            <td>${item.fecha_hora ?? ''}</td>
+                            <td>${item.concepto ?? ''}</td>
+                            <td>${item.pago_adelanto ? 'Sí' : 'No'}</td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(() => {
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No se pudieron cargar los pagos.</td></tr>';
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrftoken = getCookie('csrftoken');
+            cargarEstados();
+            cargarMediosPago();
+            cargarPagos();
+
+            // --- GUARDAR ESTADO ---
+            const formEstado = document.getElementById('form-estado');
+            if (formEstado) {
+                formEstado.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const tipo = document.getElementById('tipo').value;
+                    const nombre = document.getElementById('nombre-estado').value;
+
+                    try {
+                        const response = await fetch('/api/estados', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrftoken || ''
+                            },
+                            body: JSON.stringify({ tipo: tipo, nombre: nombre })
+                        });
+
+                        const data = await response.json().catch(() => ({}));
+
+                        if (response.ok) {
+                            mostrarFeedback('feedback-estado', '¡Estado guardado con éxito!', false);
+                            formEstado.reset();
+                            cargarEstados();
+                        } else {
+                            const detalle = formatearErroresDRF(
+                                data,
+                                'No se pudo guardar el estado por datos inválidos.'
+                            );
+                            mostrarFeedback('feedback-estado', detalle, true);
+                        }
+                    } catch (error) {
+                        mostrarFeedback(
+                            'feedback-estado',
+                            'Error de conexión con el servidor al intentar guardar el estado.',
+                            true
+                        );
+                        console.error('Error:', error);
+                    }
+                });
+            }
+
+            // --- GUARDAR MEDIO DE PAGO ---
+            const formMedioPago = document.getElementById('form-medio-pago');
+            if (formMedioPago) {
+                formMedioPago.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const nombre = document.getElementById('nombre-medio-pago').value;
+
+                    try {
+                        const response = await fetch('/api/medios-pago', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrftoken || ''
+                            },
+                            body: JSON.stringify({ nombre: nombre })
+                        });
+
+                        const data = await response.json().catch(() => ({}));
+
+                        if (response.ok) {
+                            mostrarFeedback('feedback-medio-pago', '¡Medio de pago guardado con éxito!', false);
+                            formMedioPago.reset();
+                            cargarMediosPago();
+                        } else {
+                            const detalle = formatearErroresDRF(
+                                data,
+                                'No se pudo guardar el medio de pago por datos inválidos.'
+                            );
+                            mostrarFeedback('feedback-medio-pago', detalle, true);
+                        }
+                    } catch (error) {
+                        mostrarFeedback(
+                            'feedback-medio-pago',
+                            'Error de conexión con el servidor al intentar guardar el medio de pago.',
+                            true
+                        );
+                        console.error('Error:', error);
+                    }
+                });
+            }
+
+            // --- GUARDAR PAGO ---
+            const formPago = document.getElementById('form-pago');
+            if (formPago) {
+                formPago.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const payload = {
+                        factura: document.getElementById('pago-factura').value,
+                        medio_pago: document.getElementById('pago-medio').value,
+                        estado: document.getElementById('pago-estado').value,
+                        monto: document.getElementById('pago-monto').value,
+                        fecha_hora: document.getElementById('pago-fecha-hora').value,
+                        concepto: document.getElementById('pago-concepto').value,
+                        pago_adelanto: document.getElementById('pago-adelanto').checked
+                    };
+
+                    try {
+                        const response = await fetch('/api/pagos', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrftoken || ''
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const data = await response.json().catch(() => ({}));
+
+                        if (response.ok) {
+                            mostrarFeedback('feedback-pago', '¡Pago guardado con éxito!', false);
+                            formPago.reset();
+                            cargarPagos();
+                        } else {
+                            const detalle = formatearErroresDRF(
+                                data,
+                                'No se pudo guardar el pago por datos inválidos.'
+                            );
+                            mostrarFeedback('feedback-pago', detalle, true);
+                        }
+                    } catch (error) {
+                        mostrarFeedback(
+                            'feedback-pago',
+                            'Error de conexión con el servidor al intentar guardar el pago.',
+                            true
+                        );
+                        console.error('Error:', error);
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

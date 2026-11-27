@@ -1,0 +1,242 @@
+{% extends "core/panel/base_panel.html" %}
+{% block titulo %}Pagos y Recuento{% endblock %}
+{% block encabezado %}Gestión de Pagos y Recuento{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta">
+    <div class="resumen-recuento" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        <div><strong>Cantidad de pagos:</strong> <span id="recuento-cantidad">0</span></div>
+        <div><strong>Total recaudado:</strong> $<span id="recuento-total">0.00</span></div>
+        <div><strong>Adelantos:</strong> $<span id="recuento-adelantos">0.00</span></div>
+    </div>
+
+    <form id="form" class="form-group">
+        <input type="hidden" id="id">
+
+        <select id="factura" required>
+            <option value="">Seleccionar factura...</option>
+        </select>
+
+        <select id="medio_pago" required>
+            <option value="">Seleccionar medio de pago...</option>
+        </select>
+
+        <select id="estado" required>
+            <option value="">Seleccionar estado...</option>
+        </select>
+
+        <input type="number" id="monto" placeholder="Monto ($)" step="0.01" min="0.01" required>
+        <input type="datetime-local" id="fecha_hora" required>
+        <input type="text" id="concepto" placeholder="Concepto (opcional)" maxlength="100">
+
+        <label style="display: inline-flex; align-items: center; gap: 0.4rem;">
+            <input type="checkbox" id="pago_adelanto">
+            Pago por adelanto
+        </label>
+
+        <button type="submit">Guardar</button>
+        <button type="button" id="btn-cancelar" onclick="limpiarFormulario()">Cancelar</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Factura</th>
+                <th>Medio de pago</th>
+                <th>Estado</th>
+                <th>Monto</th>
+                <th>Fecha y hora</th>
+                <th>Concepto</th>
+                <th>Adelanto</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API_PAGOS = '/api/pagos';
+    const API_FACTURAS = '/api/facturas';
+    const API_MEDIOS = '/api/medios-pago';
+    const API_ESTADOS = '/api/estados';
+
+    const $ = id => document.getElementById(id);
+    let lista = [];
+    let facturasMap = {};
+    let mediosMap = {};
+    let estadosMap = {};
+
+    function toInputDatetime(valor) {
+        if (!valor) return '';
+        const fecha = new Date(valor);
+        if (Number.isNaN(fecha.getTime())) return String(valor).slice(0, 16);
+        const offsetMs = fecha.getTimezoneOffset() * 60000;
+        return new Date(fecha.getTime() - offsetMs).toISOString().slice(0, 16);
+    }
+
+    function actualizarRecuento(pagos) {
+        const cantidad = pagos.length;
+        const total = pagos.reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
+        const adelantos = pagos
+            .filter(p => Boolean(p.pago_adelanto))
+            .reduce((acc, p) => acc + (parseFloat(p.monto) || 0), 0);
+
+        $('recuento-cantidad').textContent = cantidad;
+        $('recuento-total').textContent = total.toFixed(2);
+        $('recuento-adelantos').textContent = adelantos.toFixed(2);
+    }
+
+    async function cargarCatalogos() {
+        const [facturas, medios, estados] = await Promise.all([
+            api(API_FACTURAS).catch(() => []),
+            api(API_MEDIOS).catch(() => []),
+            api(API_ESTADOS).catch(() => [])
+        ]);
+
+        const listaFacturas = Array.isArray(facturas) ? facturas : (facturas?.results || []);
+        const listaMedios = Array.isArray(medios) ? medios : (medios?.results || []);
+        const listaEstados = Array.isArray(estados) ? estados : (estados?.results || []);
+
+        facturasMap = {};
+        $('factura').innerHTML = '<option value="">Seleccionar factura...</option>';
+        listaFacturas.forEach(f => {
+            const id = f.id_factura ?? f.id;
+            const etiqueta = f.numero_factura || `Factura #${id}`;
+            facturasMap[id] = etiqueta;
+            $('factura').innerHTML += `<option value="${id}">${etiqueta}</option>`;
+        });
+
+        mediosMap = {};
+        $('medio_pago').innerHTML = '<option value="">Seleccionar medio de pago...</option>';
+        listaMedios.forEach(m => {
+            const id = m.id_medio_pago ?? m.id;
+            const etiqueta = m.nombre || m.nombre_medio_pago || `Medio #${id}`;
+            mediosMap[id] = etiqueta;
+            $('medio_pago').innerHTML += `<option value="${id}">${etiqueta}</option>`;
+        });
+
+        estadosMap = {};
+        $('estado').innerHTML = '<option value="">Seleccionar estado...</option>';
+        listaEstados.forEach(e => {
+            const id = e.id_estado ?? e.id;
+            const etiqueta = e.nombre || e.nombre_estado || `Estado #${id}`;
+            estadosMap[id] = etiqueta;
+            $('estado').innerHTML += `<option value="${id}">${etiqueta}</option>`;
+        });
+    }
+
+    async function cargar() {
+        await cargarCatalogos();
+        const data = await api(API_PAGOS);
+        lista = (Array.isArray(data) ? data : (data?.results || []))
+            .sort((a, b) => (b.id_pago ?? b.id) - (a.id_pago ?? a.id));
+
+        actualizarRecuento(lista);
+
+        $('tabla').innerHTML = lista.map(p => {
+            const id = p.id_pago ?? p.id;
+            const activo = p.activo !== undefined ? Boolean(p.activo) : true;
+            const facturaTexto = facturasMap[p.factura] || p.factura_numero || `#${p.factura}`;
+            const medioTexto = mediosMap[p.medio_pago] || p.medio_pago_nombre || `#${p.medio_pago}`;
+            const estadoTexto = estadosMap[p.estado] || p.estado_nombre || `#${p.estado}`;
+
+            return `
+                <tr class="${activo ? '' : 'row-inactive'}">
+                    <td>${id}</td>
+                    <td>${facturaTexto}</td>
+                    <td>${medioTexto}</td>
+                    <td>${estadoTexto}</td>
+                    <td>$${parseFloat(p.monto || 0).toFixed(2)}</td>
+                    <td>${p.fecha_hora ? new Date(p.fecha_hora).toLocaleString('es-AR') : ''}</td>
+                    <td>${p.concepto || '-'}</td>
+                    <td>${p.pago_adelanto ? 'Sí' : 'No'}</td>
+                    <td class="actions">
+                        <button type="button" class="btn-edit" onclick="editar(${id})">Editar</button>
+                        ${p.activo !== undefined
+                            ? `<button type="button" class="${activo ? 'btn-delete' : 'btn-activate'}" onclick="cambiarActivo(${id})">${activo ? 'Desactivar' : 'Activar'}</button>`
+                            : `<button type="button" class="btn-delete" onclick="eliminarPago(${id})">Eliminar</button>`
+                        }
+                    </td>
+                </tr>`;
+        }).join('');
+    }
+
+    function limpiarFormulario() {
+        $('form').reset();
+        $('id').value = '';
+    }
+
+    function editar(id) {
+        const p = lista.find(x => (x.id_pago ?? x.id) === id);
+        if (!p) return;
+        $('id').value = id;
+        $('factura').value = p.factura ?? '';
+        $('medio_pago').value = p.medio_pago ?? '';
+        $('estado').value = p.estado ?? '';
+        $('monto').value = p.monto ?? '';
+        $('fecha_hora').value = toInputDatetime(p.fecha_hora);
+        $('concepto').value = p.concepto ?? '';
+        $('pago_adelanto').checked = Boolean(p.pago_adelanto);
+    }
+
+    async function cambiarActivo(id) {
+        const p = lista.find(x => (x.id_pago ?? x.id) === id);
+        if (!p) return;
+        const nuevoEstado = !Boolean(p.activo);
+        const msg = nuevoEstado
+            ? '¿Volver a activar este pago?'
+            : '¿Desactivar este pago del listado?';
+        if (confirm(msg) && await api(`${API_PAGOS}/${id}`, 'PATCH', { activo: nuevoEstado })) {
+            avisar('Estado del pago actualizado');
+            cargar();
+        }
+    }
+
+    async function eliminarPago(id) {
+        if (confirm('¿Eliminar este registro de pago?') && await api(`${API_PAGOS}/${id}`, 'DELETE')) {
+            avisar('Pago eliminado');
+            cargar();
+        }
+    }
+
+    $('form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = $('id').value;
+        const montoNum = parseFloat($('monto').value);
+
+        if (Number.isNaN(montoNum) || montoNum <= 0) {
+            avisar('El monto debe ser mayor a 0');
+            return;
+        }
+
+        const datos = {
+            factura: parseInt($('factura').value, 10),
+            medio_pago: parseInt($('medio_pago').value, 10),
+            estado: parseInt($('estado').value, 10),
+            monto: montoNum.toFixed(2),
+            fecha_hora: $('fecha_hora').value,
+            concepto: $('concepto').value.trim(),
+            pago_adelanto: $('pago_adelanto').checked
+        };
+
+        if (id) {
+            const actual = lista.find(x => (x.id_pago ?? x.id) == id);
+            if (actual && actual.activo !== undefined) {
+                datos.activo = actual.activo;
+            }
+        }
+
+        if (await api(id ? `${API_PAGOS}/${id}` : API_PAGOS, id ? 'PUT' : 'POST', datos)) {
+            limpiarFormulario();
+            avisar(id ? 'Pago actualizado' : 'Pago registrado');
+            cargar();
+        }
+    });
+
+    cargar();
+</script>
+{% endblock %}
