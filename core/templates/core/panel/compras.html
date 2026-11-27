@@ -69,13 +69,25 @@
             // sugiere el último costo conocido del insumo
             const costo = e.target.selectedOptions[0].dataset.costo;
             if (costo !== undefined) fila.querySelector('.l-precio').value = costo;
+            bloquearInsumosRepetidos();
             calcularTotal();
         });
         fila.querySelectorAll('input').forEach(i => i.addEventListener('input', calcularTotal));
         fila.querySelector('.l-quitar').addEventListener('click', () => {
-            if (document.querySelectorAll('.linea').length > 1) { fila.remove(); calcularTotal(); }
+            if (document.querySelectorAll('.linea').length > 1) { fila.remove(); bloquearInsumosRepetidos(); calcularTotal(); }
         });
         $('lineas').appendChild(fila);
+        bloquearInsumosRepetidos();
+    }
+
+    function bloquearInsumosRepetidos() {
+        const selects = [...document.querySelectorAll('.l-insumo')];
+        const elegidos = selects.map(s => s.value).filter(Boolean);
+        selects.forEach(select => {
+            [...select.options].forEach(o => {
+                o.disabled = o.value !== '' && o.value !== select.value && elegidos.includes(o.value);
+            });
+        });
     }
 
     function leerLineas() {

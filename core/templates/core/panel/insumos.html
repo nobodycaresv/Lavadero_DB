@@ -104,17 +104,58 @@
 
     async function cambiarActivo(id) {
         const i = lista.find(x => x.id_insumo === id);
-        const msg = i.activo
-            ? '¿Quitar este insumo del listado? No se borra de la base de datos.'
-            : '¿Volver a activar este insumo?';
-        if (confirm(msg) && await api(`${API}/${id}`, 'PATCH', { activo: !i.activo })) cargar();
+        const acepto = i.activo
+            ? await confirmar('Quitar insumo', `¿Querés quitar ${i.nombre} del listado? No se borra de la base de datos.`, 'Quitar')
+            : await confirmar('Activar insumo', `¿Querés volver a activar ${i.nombre}?`, 'Activar', 'activar');
+        if (acepto && await api(`${API}/${id}`, 'PATCH', { activo: !i.activo })) cargar();
+    }
+
+    function confirmar(titulo, mensaje, textoAceptar, tipo = 'quitar') {
+        const esActivar = tipo === 'activar';
+
+        return new Promise(resolver => {
+            const fondo = document.createElement('div');
+            fondo.className = 'confirmar-fondo';
+            fondo.innerHTML = `
+                <div class="confirmar-caja ${esActivar ? 'activar' : ''}" role="dialog" aria-modal="true" aria-labelledby="confirmar-titulo">
+                    <h3 id="confirmar-titulo">${esc(titulo)}</h3>
+                    <p>${esc(mensaje)}</p>
+                    <div class="confirmar-botones">
+                        <button type="button" class="btn-edit" data-respuesta="no">Cancelar</button>
+                        <button type="button" class="${esActivar ? 'btn-activate' : 'btn-delete'}" data-respuesta="si">${esc(textoAceptar)}</button>
+                    </div>
+                </div>`;
+
+            const cerrar = respuesta => {
+                document.removeEventListener('keydown', alPresionarTecla);
+                fondo.remove();
+                resolver(respuesta);
+            };
+            const alPresionarTecla = evento => {
+                if (evento.key === 'Escape') cerrar(false);
+            };
+
+            fondo.addEventListener('click', evento => {
+                if (evento.target === fondo) return cerrar(false);
+                if (evento.target.dataset.respuesta) cerrar(evento.target.dataset.respuesta === 'si');
+            });
+            document.addEventListener('keydown', alPresionarTecla);
+
+            document.body.appendChild(fondo);
+            fondo.querySelector('[data-respuesta="no"]').focus();
+        });
     }
 
     $('form').addEventListener('submit', async e => {
         e.preventDefault();
         const id = $('id').value;
+        const nombre = $('nombre').value.replace(/\s+/g, ' ').trim();
+        const repetido = lista.find(x => x.nombre.toLowerCase() === nombre.toLowerCase() && String(x.id_insumo) !== id);
+        if (repetido) {
+            return avisar(`Ya existe un insumo con ese nombre.${repetido.activo ? '' : ' Está inactivo: activalo desde la lista.'}`, 'error');
+        }
         const datos = {
-            nombre: $('nombre').value,
+            nombre: nombre,
             unidad_medida: $('unidad').value,
             stock_minimo: parseFloat($('minimo').value),
             costo_unitario: parseFloat($('costo').value)
@@ -143,4 +184,67 @@
 
     cargar();
 </script>
+{% endblock %}
+
+{% block estilos %}
+<style>
+    .confirmar-fondo {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(5, 5, 8, .72);
+        backdrop-filter: blur(3px);
+        animation: confirmar-fondo .2s ease both;
+    }
+
+    .confirmar-caja {
+        width: 100%;
+        max-width: 420px;
+        padding: 26px 26px 22px;
+        background: var(--panel-2);
+        border: 1px solid var(--borde);
+        border-top: 4px solid var(--rojo-claro);
+        border-radius: 16px;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, .65), 0 0 40px var(--rojo-glow);
+        animation: confirmar-caja .25s ease both;
+    }
+
+    .confirmar-caja.activar {
+        border-top-color: var(--ok);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, .65);
+    }
+
+    .confirmar-caja h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+        color: var(--blanco);
+    }
+
+    .confirmar-caja p {
+        margin: 0 0 22px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--gris-claro);
+    }
+
+    .confirmar-botones {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    @keyframes confirmar-fondo {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+
+    @keyframes confirmar-caja {
+        from { opacity: 0; transform: translateY(14px) scale(.97); }
+        to   { opacity: 1; transform: none; }
+    }
+</style>
 {% endblock %}

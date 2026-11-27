@@ -3,177 +3,450 @@
 {% block encabezado %}Clientes y Vehículos{% endblock %}
 
 {% block contenido %}
+
+<!-- Clientes -->
 <div class="tarjeta">
     <h2 class="subtitulo">Clientes</h2>
+
     <form id="form-cliente" class="form-group">
         <input type="hidden" id="c-id">
-        <input type="text" id="c-nombre" placeholder="Nombre" required>
-        <input type="text" id="c-apellido" placeholder="Apellido" required>
-        <input type="tel" id="c-telefono" placeholder="Teléfono" required>
-        <input type="email" id="c-email" placeholder="Correo electrónico (opcional)">
+        <input type="text" id="c-nombre" placeholder="Nombre" maxlength="100" autocomplete="off" required>
+        <input type="text" id="c-apellido" placeholder="Apellido" maxlength="100" autocomplete="off" required>
+        <input type="tel" id="c-telefono" placeholder="Teléfono (8 a 15 dígitos)" maxlength="20" autocomplete="off"
+               title="Solo números, espacios, + - ( )" required>
+        <input type="email" id="c-email" placeholder="Correo electrónico (opcional)" maxlength="254" autocomplete="off">
         <button type="submit">Guardar</button>
     </form>
+
     <input type="search" id="buscar-cliente" placeholder="Buscar cliente...">
 
     <table>
         <thead>
-            <tr><th>Cliente</th><th>Teléfono</th><th>Correo</th><th>Vehículos</th><th>Acciones</th></tr>
+            <tr>
+                <th>Cliente</th>
+                <th>Teléfono</th>
+                <th>Correo</th>
+                <th>Vehículos</th>
+                <th>Acciones</th>
+            </tr>
         </thead>
         <tbody id="tabla-clientes"></tbody>
     </table>
 </div>
 
+<!-- Vehículos -->
 <div class="tarjeta">
     <h2 class="subtitulo">Vehículos</h2>
+
     <form id="form-vehiculo" class="form-group">
         <input type="hidden" id="v-id">
         <select id="v-cliente" required></select>
-        <input type="text" id="v-patente" placeholder="Patente (Ej. AB123CD)" required>
-        <input type="text" id="v-marca" placeholder="Marca" required>
-        <input type="text" id="v-modelo" placeholder="Modelo" required>
+        <input type="text" id="v-patente" placeholder="Patente (AB123CD)" maxlength="10" autocomplete="off"
+               title="Formato nuevo: AB123CD. Formato viejo: ABC123" required>
+        <input type="text" id="v-marca" placeholder="Marca" maxlength="50" autocomplete="off" required>
+        <input type="text" id="v-modelo" placeholder="Modelo" maxlength="50" autocomplete="off" required>
         <button type="submit">Guardar</button>
     </form>
+
     <input type="search" id="buscar-vehiculo" placeholder="Buscar vehículo...">
 
     <table>
         <thead>
-            <tr><th>Patente</th><th>Marca</th><th>Modelo</th><th>Dueño</th><th>Acciones</th></tr>
+            <tr>
+                <th>Patente</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Dueño</th>
+                <th>Acciones</th>
+            </tr>
         </thead>
         <tbody id="tabla-vehiculos"></tbody>
     </table>
 </div>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
+
     const API_CLIENTES = '/api/clientes';
     const API_VEHICULOS = '/api/vehiculos';
-    const $ = id => document.getElementById(id);
-    const esc = t => String(t ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+
+    // Patente argentina: formato nuevo (AB123CD) o formato viejo (ABC123)
+    const PATENTE_REGEX = /^(?:[A-Z]{2}\d{3}[A-Z]{2}|[A-Z]{3}\d{3})$/;
+    const MENSAJE_PATENTE = 'Patente inválida. Usá el formato nuevo (AB123CD) o el viejo (ABC123).';
+
+    // Reglas de validación del formulario (las mismas que aplica el servidor)
+    const REGEX_NOMBRE = /^[\p{L}]+(?:[ '.\-][\p{L}]+)*\.?$/u;
+    const REGEX_MARCA_MODELO = /^[\p{L}\p{N}_ .\-/]+$/u;
+    const REGEX_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const REGLAS = {
+        'c-nombre':   { ok: t => REGEX_NOMBRE.test(t), mensaje: 'Nombre inválido. Usá solo letras (sin números ni símbolos).' },
+        'c-apellido': { ok: t => REGEX_NOMBRE.test(t), mensaje: 'Apellido inválido. Usá solo letras (sin números ni símbolos).' },
+        'c-telefono': { ok: t => /^\+?[\d\s()\-]+$/.test(t) && cantidadDigitos(t) >= 8 && cantidadDigitos(t) <= 15,
+                        mensaje: 'El teléfono debe tener entre 8 y 15 dígitos (solo números, espacios, + - y paréntesis).' },
+        'c-email':    { ok: t => t === '' || REGEX_EMAIL.test(t), mensaje: 'El correo electrónico no es válido.' },
+        'v-patente':  { ok: t => PATENTE_REGEX.test(limpiarPatente(t)), mensaje: MENSAJE_PATENTE },
+        'v-marca':    { ok: t => REGEX_MARCA_MODELO.test(t), mensaje: 'Marca inválida. Usá solo letras, números, espacios, punto o guion.' },
+        'v-modelo':   { ok: t => REGEX_MARCA_MODELO.test(t), mensaje: 'Modelo inválido. Usá solo letras, números, espacios, punto o guion.' }
+    };
+
     let clientes = [];
     let vehiculos = [];
 
-    // ---------- Clientes ----------
+    // Atajo para buscar un elemento por id
+    const $ = id => document.getElementById(id);
+
+    // Escapa el texto para mostrarlo de forma segura dentro del HTML
+    const esc = texto => String(texto ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+
+    // Pasa a mayúsculas y saca espacios y guiones: "ab 123-cd" -> "AB123CD"
+    const limpiarPatente = texto => String(texto).replace(/[\s-]/g, '').toUpperCase();
+
+    const cantidadDigitos = texto => String(texto).replace(/\D/g, '').length;
+
+    // Junta espacios repetidos: "  juan   perez " -> "juan perez"
+    const juntarEspacios = texto => String(texto).replace(/\s+/g, ' ').trim();
+
+    // Marca en rojo el campo si no cumple su regla (los vacíos los controla "required")
+    function marcarCampo(campo) {
+        const texto = juntarEspacios(campo.value);
+        const invalido = texto !== '' && !REGLAS[campo.id].ok(texto);
+        campo.classList.toggle('campo-invalido', invalido);
+        return !invalido;
+    }
+
+    // Revisa los campos indicados, si alguno falla lo marca y avisa
+    function validarCampos(ids) {
+        for (const id of ids) {
+            const campo = $(id);
+            const texto = juntarEspacios(campo.value);
+            if (!REGLAS[id].ok(texto)) {
+                campo.classList.add('campo-invalido');
+                campo.focus();
+                avisar(REGLAS[id].mensaje, 'error');
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Muestra los avisos que devuelve el servidor, ej: "el teléfono ya lo tiene otro cliente"
+    function mostrarAvisos(respuesta) {
+        (respuesta.avisos || []).forEach(texto => avisar(texto, 'error'));
+    }
+
+    // Espera a que el usuario deje de escribir antes de llamar a la función
+    function conEspera(funcion, milisegundos = 250) {
+        let temporizador;
+        return () => {
+            clearTimeout(temporizador);
+            temporizador = setTimeout(funcion, milisegundos);
+        };
+    }
+
+    // Celda de acciones (Editar / Eliminar o Activar) que se repite en las dos tablas
+    function celdaAcciones(id, activo, funcionEditar, funcionCambiarActivo) {
+        return `
+            <td class="actions">
+                <button class="btn-edit" onclick="${funcionEditar}(${id})">Editar</button>
+                <button class="${activo ? 'btn-delete' : 'btn-activate'}" onclick="${funcionCambiarActivo}(${id})">${activo ? 'Eliminar' : 'Activar'}</button>
+            </td>`;
+    }
+
+    function confirmar(titulo, mensaje, textoAceptar, tipo = 'quitar') {
+        const esActivar = tipo === 'activar';
+
+        return new Promise(resolver => {
+            const fondo = document.createElement('div');
+            fondo.className = 'confirmar-fondo';
+            fondo.innerHTML = `
+                <div class="confirmar-caja ${esActivar ? 'activar' : ''}" role="dialog" aria-modal="true" aria-labelledby="confirmar-titulo">
+                    <h3 id="confirmar-titulo">${esc(titulo)}</h3>
+                    <p>${esc(mensaje)}</p>
+                    <div class="confirmar-botones">
+                        <button type="button" class="btn-edit" data-respuesta="no">Cancelar</button>
+                        <button type="button" class="${esActivar ? 'btn-activate' : 'btn-delete'}" data-respuesta="si">${esc(textoAceptar)}</button>
+                    </div>
+                </div>`;
+
+            const cerrar = respuesta => {
+                document.removeEventListener('keydown', alPresionarTecla);
+                fondo.remove();
+                resolver(respuesta);
+            };
+            const alPresionarTecla = evento => {
+                if (evento.key === 'Escape') cerrar(false);
+            };
+
+            fondo.addEventListener('click', evento => {
+                if (evento.target === fondo) return cerrar(false);          // clic afuera = cancelar
+                if (evento.target.dataset.respuesta) cerrar(evento.target.dataset.respuesta === 'si');
+            });
+            document.addEventListener('keydown', alPresionarTecla);
+
+            document.body.appendChild(fondo);
+            fondo.querySelector('[data-respuesta="no"]').focus();
+        });
+    }
+
     async function cargarClientes() {
-        const q = encodeURIComponent($('buscar-cliente').value);
-        clientes = await api(`${API_CLIENTES}?search=${q}`) || [];
+        const busqueda = encodeURIComponent($('buscar-cliente').value);
+        clientes = await api(`${API_CLIENTES}?search=${busqueda}`) || [];
+
         $('tabla-clientes').innerHTML = clientes.map(c => `
             <tr class="${c.activo ? '' : 'row-inactive'}">
                 <td>${esc(c.apellido)}, ${esc(c.nombre)}</td>
                 <td>${esc(c.telefono)}</td>
                 <td>${esc(c.email)}</td>
                 <td>${c.vehiculos.map(v => esc(v.patente)).join(', ')}</td>
-                <td class="actions">
-                    <button class="btn-edit" onclick="editarCliente(${c.id_cliente})">Editar</button>
-                    <button class="${c.activo ? 'btn-delete' : 'btn-activate'}" onclick="cambiarActivoCliente(${c.id_cliente})">${c.activo ? 'Eliminar' : 'Activar'}</button>
-                </td>
+                ${celdaAcciones(c.id_cliente, c.activo, 'editarCliente', 'cambiarActivoCliente')}
             </tr>`).join('');
-        cargarOpcionesClientes();
+
+        cargarOpcionesDuenio();
     }
 
-    async function cargarOpcionesClientes() {
-        // el selector de dueño solo ofrece clientes activos
+    // El selector de dueño (formulario de vehículos) solo ofrece clientes activos
+    async function cargarOpcionesDuenio() {
         const activos = await api(`${API_CLIENTES}?activo=true`) || [];
-        const actual = $('v-cliente').value;
+        const seleccionado = $('v-cliente').value;
+        const textoSeleccionado = $('v-cliente').selectedOptions[0]?.textContent;
+
         $('v-cliente').innerHTML = '<option value="">Elegí un cliente (dueño)</option>' +
             activos.map(c => `<option value="${c.id_cliente}">${esc(c.apellido)}, ${esc(c.nombre)}</option>`).join('');
-        $('v-cliente').value = actual;
+
+        // Si se está editando un vehículo cuyo dueño está inactivo, se conserva esa opción
+        if (seleccionado && !activos.some(c => String(c.id_cliente) === seleccionado)) {
+            $('v-cliente').add(new Option(textoSeleccionado, seleccionado));
+        }
+        $('v-cliente').value = seleccionado;
     }
 
     function editarCliente(id) {
-        const c = clientes.find(x => x.id_cliente === id);
+        const cliente = clientes.find(c => c.id_cliente === id);
+
         $('c-id').value = id;
-        $('c-nombre').value = c.nombre;
-        $('c-apellido').value = c.apellido;
-        $('c-telefono').value = c.telefono;
-        $('c-email').value = c.email;
+        $('c-nombre').value = cliente.nombre;
+        $('c-apellido').value = cliente.apellido;
+        $('c-telefono').value = cliente.telefono;
+        $('c-email').value = cliente.email;
+        document.querySelectorAll('#form-cliente .campo-invalido').forEach(c => c.classList.remove('campo-invalido'));
     }
 
     async function cambiarActivoCliente(id) {
-        const c = clientes.find(x => x.id_cliente === id);
-        const msg = c.activo
-            ? '¿Quitar este cliente del listado? No se borra de la base de datos.'
-            : '¿Volver a activar este cliente?';
-        if (confirm(msg) && await api(`${API_CLIENTES}/${id}`, 'PATCH', { activo: !c.activo })) cargarClientes();
+        const cliente = clientes.find(c => c.id_cliente === id);
+        const nombre = `${cliente.apellido}, ${cliente.nombre}`;
+        const patentes = cliente.vehiculos.map(v => v.patente);
+
+        // Si tiene vehículos activos, el cartel avisa que también se van a quitar
+        const aviso = patentes.length
+            ? `¿Querés quitar a ${nombre}? También se van a quitar sus vehículos activos: ${patentes.join(', ')}. No se borra nada de la base de datos.`
+            : `¿Querés quitar a ${nombre} del listado? No se borra de la base de datos.`;
+
+        const acepto = cliente.activo
+            ? await confirmar('Quitar cliente', aviso, 'Quitar')
+            : await confirmar('Activar cliente', `¿Querés volver a activar a ${nombre}? Sus vehículos quedan inactivos: activalos uno por uno si hace falta.`, 'Activar', 'activar');
+
+        if (acepto && await api(`${API_CLIENTES}/${id}`, 'PATCH', { activo: !cliente.activo })) {
+            cargarClientes();
+            cargarVehiculos();      // los vehículos del cliente pueden haber quedado inactivos
+        }
     }
 
-    $('form-cliente').addEventListener('submit', async e => {
-        e.preventDefault();
+    async function guardarCliente(evento) {
+        evento.preventDefault();
+        if (!validarCampos(['c-nombre', 'c-apellido', 'c-telefono', 'c-email'])) return;
+
         const id = $('c-id').value;
         const datos = {
-            nombre: $('c-nombre').value,
-            apellido: $('c-apellido').value,
-            telefono: $('c-telefono').value,
-            email: $('c-email').value
+            nombre: juntarEspacios($('c-nombre').value),
+            apellido: juntarEspacios($('c-apellido').value),
+            telefono: juntarEspacios($('c-telefono').value),
+            email: $('c-email').value.trim().toLowerCase()
         };
-        if (await api(id ? `${API_CLIENTES}/${id}` : API_CLIENTES, id ? 'PATCH' : 'POST', datos)) {
-            e.target.reset();
-            $('c-id').value = '';
-            avisar('Cliente guardado');
-            cargarClientes();
-            cargarVehiculos();
-        }
-    });
 
-    // ---------- Vehículos ----------
+        const guardado = await api(id ? `${API_CLIENTES}/${id}` : API_CLIENTES, id ? 'PATCH' : 'POST', datos);
+        if (!guardado) return;
+
+        evento.target.reset();
+        $('c-id').value = '';
+        evento.target.querySelectorAll('.campo-invalido').forEach(c => c.classList.remove('campo-invalido'));
+        avisar('Cliente guardado');
+        mostrarAvisos(guardado);
+        cargarClientes();
+        cargarVehiculos();      // la columna "Dueño" puede haber cambiado de nombre
+    }
+
     async function cargarVehiculos() {
-        const q = encodeURIComponent($('buscar-vehiculo').value);
-        vehiculos = await api(`${API_VEHICULOS}?search=${q}`) || [];
+        const busqueda = encodeURIComponent($('buscar-vehiculo').value);
+        vehiculos = await api(`${API_VEHICULOS}?search=${busqueda}`) || [];
+
         $('tabla-vehiculos').innerHTML = vehiculos.map(v => `
             <tr class="${v.activo ? '' : 'row-inactive'}">
                 <td>${esc(v.patente)}</td>
                 <td>${esc(v.marca)}</td>
                 <td>${esc(v.modelo)}</td>
                 <td>${esc(v.cliente_nombre)}</td>
-                <td class="actions">
-                    <button class="btn-edit" onclick="editarVehiculo(${v.id_vehiculo})">Editar</button>
-                    <button class="${v.activo ? 'btn-delete' : 'btn-activate'}" onclick="cambiarActivoVehiculo(${v.id_vehiculo})">${v.activo ? 'Eliminar' : 'Activar'}</button>
-                </td>
+                ${celdaAcciones(v.id_vehiculo, v.activo, 'editarVehiculo', 'cambiarActivoVehiculo')}
             </tr>`).join('');
     }
 
     function editarVehiculo(id) {
-        const v = vehiculos.find(x => x.id_vehiculo === id);
+        const vehiculo = vehiculos.find(v => v.id_vehiculo === id);
+
+        // Si el dueño está inactivo no figura en el selector: se agrega para poder editar
+        if (![...$('v-cliente').options].some(o => o.value === String(vehiculo.cliente))) {
+            $('v-cliente').add(new Option(`${vehiculo.cliente_nombre} (inactivo)`, vehiculo.cliente));
+        }
+
         $('v-id').value = id;
-        $('v-cliente').value = v.cliente;
-        $('v-patente').value = v.patente;
-        $('v-marca').value = v.marca;
-        $('v-modelo').value = v.modelo;
+        $('v-cliente').value = vehiculo.cliente;
+        $('v-patente').value = vehiculo.patente;
+        document.querySelectorAll('#form-vehiculo .campo-invalido').forEach(c => c.classList.remove('campo-invalido'));
+        $('v-marca').value = vehiculo.marca;
+        $('v-modelo').value = vehiculo.modelo;
     }
 
     async function cambiarActivoVehiculo(id) {
-        const v = vehiculos.find(x => x.id_vehiculo === id);
-        const msg = v.activo
-            ? '¿Quitar este vehículo del listado? No se borra de la base de datos.'
-            : '¿Volver a activar este vehículo?';
-        if (confirm(msg) && await api(`${API_VEHICULOS}/${id}`, 'PATCH', { activo: !v.activo })) {
+        const vehiculo = vehiculos.find(v => v.id_vehiculo === id);
+
+        const acepto = vehiculo.activo
+            ? await confirmar('Quitar vehículo', `¿Querés quitar el vehículo ${vehiculo.patente} del listado? No se borra de la base de datos.`, 'Quitar')
+            : await confirmar('Activar vehículo', `¿Querés volver a activar el vehículo ${vehiculo.patente}?`, 'Activar', 'activar');
+
+        // No se puede reactivar un vehículo si su dueño está inactivo
+        if (acepto && !vehiculo.activo) {
+            const duenio = await api(`${API_CLIENTES}/${vehiculo.cliente}`);
+            if (duenio && !duenio.activo) {
+                return avisar('El dueño está inactivo. Activá primero al cliente.', 'error');
+            }
+        }
+
+        if (acepto && await api(`${API_VEHICULOS}/${id}`, 'PATCH', { activo: !vehiculo.activo })) {
             cargarVehiculos();
-            cargarClientes();
+            cargarClientes();       // actualiza la columna "Vehículos" del cliente
         }
     }
 
-    $('form-vehiculo').addEventListener('submit', async e => {
-        e.preventDefault();
+    // Mientras escribe, mayúsculas, sin espacios ni guiones
+    function alEscribirPatente(evento) {
+        evento.target.value = limpiarPatente(evento.target.value);
+        evento.target.classList.remove('campo-invalido');
+    }
+
+    // En teléfono solo se permiten números, espacios, + - ( )
+    function alEscribirTelefono(evento) {
+        evento.target.value = evento.target.value.replace(/[^\d\s+()\-]/g, '');
+        evento.target.classList.remove('campo-invalido');
+    }
+
+    async function guardarVehiculo(evento) {
+        evento.preventDefault();
         const id = $('v-id').value;
+        if (!validarCampos(['v-patente', 'v-marca', 'v-modelo'])) return;
+
         const datos = {
             cliente: parseInt($('v-cliente').value),
-            patente: $('v-patente').value,
-            marca: $('v-marca').value,
-            modelo: $('v-modelo').value
+            patente: limpiarPatente($('v-patente').value),
+            marca: juntarEspacios($('v-marca').value),
+            modelo: juntarEspacios($('v-modelo').value)
         };
-        if (await api(id ? `${API_VEHICULOS}/${id}` : API_VEHICULOS, id ? 'PATCH' : 'POST', datos)) {
-            e.target.reset();
-            $('v-id').value = '';
-            avisar('Vehículo guardado');
-            cargarVehiculos();
-            cargarClientes();
-        }
-    });
 
-    $('buscar-cliente').addEventListener('input', cargarClientes);
-    $('buscar-vehiculo').addEventListener('input', cargarVehiculos);
+        const guardado = await api(id ? `${API_VEHICULOS}/${id}` : API_VEHICULOS, id ? 'PATCH' : 'POST', datos);
+        if (!guardado) return;
+
+        evento.target.reset();
+        $('v-id').value = '';
+        evento.target.querySelectorAll('.campo-invalido').forEach(c => c.classList.remove('campo-invalido'));
+        avisar('Vehículo guardado');
+        cargarVehiculos();
+        cargarClientes();           // actualiza la columna "Vehículos" del cliente
+    }
+
+    $('form-cliente').addEventListener('submit', guardarCliente);
+    $('form-vehiculo').addEventListener('submit', guardarVehiculo);
+
+    $('v-patente').addEventListener('input', alEscribirPatente);
+    $('c-telefono').addEventListener('input', alEscribirTelefono);
+
+    // Al salir de cualquier campo con regla se marca en rojo si no es válido
+    Object.keys(REGLAS).forEach(id => $(id).addEventListener('blur', () => marcarCampo($(id))));
+
+    $('buscar-cliente').addEventListener('input', conEspera(cargarClientes));
+    $('buscar-vehiculo').addEventListener('input', conEspera(cargarVehiculos));
 
     cargarClientes();
     cargarVehiculos();
 </script>
+{% endblock %}
+
+{% block estilos %}
+<style>
+    .confirmar-fondo {          /* cartel de confirmar */
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(5, 5, 8, .72);
+        backdrop-filter: blur(3px);
+        animation: confirmar-fondo .2s ease both;
+    }
+
+    .confirmar-caja {
+        width: 100%;
+        max-width: 420px;
+        padding: 26px 26px 22px;
+        background: var(--panel-2);
+        border: 1px solid var(--borde);
+        border-top: 4px solid var(--rojo-claro);
+        border-radius: 16px;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, .65), 0 0 40px var(--rojo-glow);
+        animation: confirmar-caja .25s ease both;
+    }
+
+    /* verde cuando se vuelve a activar un registro */
+    .confirmar-caja.activar {
+        border-top-color: var(--ok);
+        box-shadow: 0 24px 60px rgba(0, 0, 0, .65);
+    }
+
+    .confirmar-caja h3 {
+        margin: 0 0 10px;
+        font-size: 18px;
+        color: var(--blanco);
+    }
+
+    .confirmar-caja p {
+        margin: 0 0 22px;
+        font-size: 14px;
+        line-height: 1.5;
+        color: var(--gris-claro);
+    }
+
+    .confirmar-botones {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    @keyframes confirmar-fondo {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+
+    @keyframes confirmar-caja {
+        from { opacity: 0; transform: translateY(14px) scale(.97); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    /* Campo con formato inválido */
+    input.campo-invalido {
+        border-color: var(--rojo-claro) !important;
+        box-shadow: 0 0 0 3px var(--rojo-glow);
+    }
+</style>
 {% endblock %}

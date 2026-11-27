@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 
 from django.db import transaction
@@ -26,6 +27,19 @@ class InsumoSerializer(serializers.ModelSerializer):
 
     def get_stock_bajo(self, insumo):
         return insumo.stock_actual <= insumo.stock_minimo
+
+    def validate_nombre(self, value):
+        value = re.sub(r"\s+", " ", value).strip()
+        if not re.search(r"[^\W_]", value):
+            raise serializers.ValidationError("El nombre debe tener letras o números.")
+        otros = Insumo.objects.all()
+        if self.instance is not None:
+            otros = otros.exclude(pk=self.instance.pk)
+        igual = next((i for i in otros if re.sub(r"\s+", " ", i.nombre).strip().casefold() == value.casefold()), None)
+        if igual:
+            pista = "" if igual.activo else " Está inactivo: activalo desde la lista."
+            raise serializers.ValidationError("Ya existe un insumo con ese nombre." + pista)
+        return value
 
     @transaction.atomic
     def create(self, validated_data):
@@ -111,6 +125,14 @@ class CompraSerializer(serializers.ModelSerializer):
     def validate_detalles(self, detalles):
         if not detalles:
             raise serializers.ValidationError("La compra necesita al menos un insumo.")
+        vistos = set()
+        for detalle in detalles:
+            insumo = detalle["insumo"]
+            if insumo.pk in vistos:
+                raise serializers.ValidationError(
+                    f"El insumo {insumo.nombre} está repetido en la compra. Juntá las cantidades en una sola línea."
+                )
+            vistos.add(insumo.pk)
         return detalles
 
     @transaction.atomic
