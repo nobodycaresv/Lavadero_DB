@@ -1,0 +1,281 @@
+{% extends "core/panel/base_panel.html" %}
+{% block titulo %}Órdenes de Trabajo{% endblock %}
+{% block encabezado %}Gestión de Órdenes de Trabajo{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta">
+    <form id="form-orden" class="form-group">
+        <input type="hidden" id="orden-id">
+        <select id="ficha_tecnica" required>
+            <option value="">Seleccionar ficha confirmada...</option>
+        </select>
+        <select id="estado" required>
+            <option value="">Seleccionar estado...</option>
+        </select>
+        <input type="time" id="hora_inicio" required>
+        <button type="submit">Guardar orden</button>
+        <button type="button" id="btn-cancelar-orden" onclick="limpiarOrden()" style="display:none;">Cancelar</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Ficha / Turno</th>
+                <th>Estado</th>
+                <th>Hora inicio</th>
+                <th>Servicios</th>
+                <th>Total</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-ordenes"></tbody>
+    </table>
+</div>
+
+<div class="tarjeta" id="seccion-detalles" style="display:none; margin-top: 20px;">
+    <h3 id="titulo-detalles">Detalles de Servicio</h3>
+
+    <form id="form-detalle" class="form-group">
+        <input type="hidden" id="detalle-id">
+        <select id="servicio" required>
+            <option value="">Seleccionar servicio...</option>
+        </select>
+        <select id="empleado" required>
+            <option value="">Asignar empleado...</option>
+        </select>
+        <input type="number" id="precio" placeholder="Precio ($)" step="0.01" min="0" required>
+        <input type="time" id="hora_fin" title="Hora de finalización (opcional)">
+        <button type="submit">Guardar servicio</button>
+        <button type="button" id="btn-cancelar-detalle" onclick="limpiarDetalle()" style="display:none;">Cancelar</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Servicio</th>
+                <th>Empleado asignado</th>
+                <th>Hora fin</th>
+                <th>Precio</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-detalles"></tbody>
+    </table>
+    <!-- Aquí se conectará el endpoint de Consumo de Insumos (Matías) por id_detalle -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API_ORDENES = '/api/ordenes';
+    const API_DETALLES = '/api/detalles-servicio';
+    const $ = id => document.getElementById(id);
+
+    let ordenes = [];
+    let fichas = [];
+    let estados = [];
+    let servicios = [];
+    let empleados = [];
+    let detalles = [];
+    let ordenSeleccionada = null;
+
+    function poblarSelectsOrden(fichaActualId = null) {
+        const fichasDisponibles = fichas.filter(
+            f => (f.confirmada && !f.tiene_orden) || f.id_ficha === fichaActualId
+        );
+        $('ficha_tecnica').innerHTML = '<option value="">Seleccionar ficha confirmada...</option>' +
+            fichasDisponibles.map(f => `<option value="${f.id_ficha}">Ficha #${f.id_ficha} - ${f.turno_texto}</option>`).join('');
+
+        $('estado').innerHTML = '<option value="">Seleccionar estado...</option>' +
+            estados.map(e => `<option value="${e.id_estado}">${e.nombre}</option>`).join('');
+    }
+
+    function poblarSelectsDetalle(servicioActualId = null, empleadoActualId = null) {
+        const servActivos = servicios.filter(s => s.activo || s.id_servicio === servicioActualId);
+        $('servicio').innerHTML = '<option value="">Seleccionar servicio...</option>' +
+            servActivos.map(s => `<option value="${s.id_servicio}">${s.nombre_servicio} ($${s.precio})</option>`).join('');
+
+        const empActivos = empleados.filter(e => e.activo || e.id_empleado === empleadoActualId);
+        $('empleado').innerHTML = '<option value="">Asignar empleado...</option>' +
+            empActivos.map(e => `<option value="${e.id_empleado}">${e.nombre} ${e.apellido} (${e.rol})</option>`).join('');
+    }
+
+    async function cargarTodo() {
+        const [oData, fData, estData, sData, eData] = await Promise.all([
+            api(API_ORDENES),
+            api('/api/fichas'),
+            api(`${API_ORDENES}/estados`),
+            api('/api/servicios'),
+            api('/api/empleados')
+        ]);
+        ordenes = oData || [];
+        fichas = fData || [];
+        estados = estData || [];
+        servicios = sData || [];
+        empleados = eData || [];
+
+        poblarSelectsOrden();
+        poblarSelectsDetalle();
+
+        $('tabla-ordenes').innerHTML = ordenes.map(o => `
+            <tr>
+                <td>#${o.id_orden}</td>
+                <td>${o.ficha_texto}</td>
+                <td>${o.estado_nombre}</td>
+                <td>${o.hora_inicio.slice(0, 5)}</td>
+                <td>${o.cantidad_servicios}</td>
+                <td>$${Number(o.total).toFixed(2)}</td>
+                <td class="actions">
+                    <button class="btn-activate" onclick="verDetalles(${o.id_orden})">Servicios</button>
+                    <button class="btn-edit" onclick="editarOrden(${o.id_orden})">Editar</button>
+                    <button class="btn-delete" onclick="eliminarOrden(${o.id_orden})">Eliminar</button>
+                </td>
+            </tr>`).join('');
+
+        if (ordenSeleccionada) {
+            const existe = ordenes.find(x => x.id_orden === ordenSeleccionada.id_orden);
+            if (existe) {
+                ordenSeleccionada = existe;
+                await cargarDetalles();
+            } else {
+                ordenSeleccionada = null;
+                $('seccion-detalles').style.display = 'none';
+            }
+        }
+    }
+
+    function limpiarOrden() {
+        $('form-orden').reset();
+        $('orden-id').value = '';
+        $('btn-cancelar-orden').style.display = 'none';
+        poblarSelectsOrden();
+    }
+
+    function editarOrden(id) {
+        const o = ordenes.find(x => x.id_orden === id);
+        if (!o) return;
+        poblarSelectsOrden(o.ficha_tecnica);
+        $('orden-id').value = id;
+        $('ficha_tecnica').value = o.ficha_tecnica;
+        $('estado').value = o.estado;
+        $('hora_inicio').value = o.hora_inicio.slice(0, 5);
+        $('btn-cancelar-orden').style.display = 'inline-block';
+    }
+
+    async function eliminarOrden(id) {
+        if (confirm('¿Eliminar esta orden de trabajo?') && await api(`${API_ORDENES}/${id}`, 'DELETE')) {
+            avisar('Orden eliminada');
+            limpiarOrden();
+            cargarTodo();
+        }
+    }
+
+    $('form-orden').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = $('orden-id').value;
+        const datos = {
+            ficha_tecnica: parseInt($('ficha_tecnica').value),
+            estado: parseInt($('estado').value),
+            hora_inicio: $('hora_inicio').value
+        };
+        if (await api(id ? `${API_ORDENES}/${id}` : API_ORDENES, id ? 'PUT' : 'POST', datos)) {
+            limpiarOrden();
+            avisar('Orden de trabajo guardada');
+            cargarTodo();
+        }
+    });
+
+    // --- DETALLES DE SERVICIO ---
+
+    async function verDetalles(idOrden) {
+        ordenSeleccionada = ordenes.find(x => x.id_orden === idOrden);
+        if (!ordenSeleccionada) return;
+        $('titulo-detalles').textContent = `Detalles de Servicio — Orden #${ordenSeleccionada.id_orden} (${ordenSeleccionada.ficha_texto})`;
+        $('seccion-detalles').style.display = 'block';
+        limpiarDetalle();
+        await cargarDetalles();
+    }
+
+    async function cargarDetalles() {
+        if (!ordenSeleccionada) return;
+        detalles = (await api(`${API_DETALLES}?orden=${ordenSeleccionada.id_orden}`)) || [];
+        $('tabla-detalles').innerHTML = detalles.length
+            ? detalles.map(d => `
+                <tr>
+                    <td>${d.servicio_nombre}</td>
+                    <td>${d.empleado_nombre}</td>
+                    <td>${d.hora_fin ? d.hora_fin.slice(0, 5) : 'En curso'}</td>
+                    <td>$${Number(d.precio).toFixed(2)}</td>
+                    <td class="actions">
+                        <button class="btn-edit" onclick="editarDetalle(${d.id_detalle})">Editar</button>
+                        <button class="btn-delete" onclick="eliminarDetalle(${d.id_detalle})">Eliminar</button>
+                    </td>
+                </tr>`).join('')
+            : '<tr><td colspan="5">Todavía no hay servicios asignados a esta orden.</td></tr>';
+    }
+
+    $('servicio').addEventListener('change', () => {
+        const s = servicios.find(x => x.id_servicio == $('servicio').value);
+        if (s && !$('detalle-id').value) $('precio').value = s.precio;
+    });
+
+    function limpiarDetalle() {
+        $('form-detalle').reset();
+        $('detalle-id').value = '';
+        $('btn-cancelar-detalle').style.display = 'none';
+        poblarSelectsDetalle();
+    }
+
+    function editarDetalle(id) {
+        const d = detalles.find(x => x.id_detalle === id);
+        if (!d) return;
+        poblarSelectsDetalle(d.servicio, d.empleado);
+        $('detalle-id').value = id;
+        $('servicio').value = d.servicio;
+        $('empleado').value = d.empleado;
+        $('precio').value = d.precio;
+        $('hora_fin').value = d.hora_fin ? d.hora_fin.slice(0, 5) : '';
+        $('btn-cancelar-detalle').style.display = 'inline-block';
+    }
+
+    async function eliminarDetalle(id) {
+        if (confirm('¿Quitar este servicio de la orden?') && await api(`${API_DETALLES}/${id}`, 'DELETE')) {
+            avisar('Servicio quitado de la orden');
+            limpiarDetalle();
+            cargarTodo();
+        }
+    }
+
+    $('form-detalle').addEventListener('submit', async e => {
+        e.preventDefault();
+        if (!ordenSeleccionada) return;
+        const id = $('detalle-id').value;
+        const precio = parseFloat($('precio').value);
+        const horaFin = $('hora_fin').value || null;
+
+        if (isNaN(precio) || precio < 0) {
+            return avisar('El precio no puede ser negativo.');
+        }
+        if (horaFin && horaFin < ordenSeleccionada.hora_inicio.slice(0, 5)) {
+            return avisar('La hora de fin no puede ser anterior a la hora de inicio de la orden.');
+        }
+
+        const datos = {
+            orden: ordenSeleccionada.id_orden,
+            servicio: parseInt($('servicio').value),
+            empleado: parseInt($('empleado').value),
+            precio,
+            hora_fin: horaFin
+        };
+
+        if (await api(id ? `${API_DETALLES}/${id}` : API_DETALLES, id ? 'PUT' : 'POST', datos)) {
+            limpiarDetalle();
+            avisar('Detalle de servicio guardado');
+            cargarTodo();
+        }
+    });
+
+    cargarTodo();
+</script>
+{% endblock %}

@@ -1,0 +1,178 @@
+{% extends "core/panel/base_panel.html" %}
+{% block titulo %}Fichas Técnicas{% endblock %}
+{% block encabezado %}Gestión de Fichas Técnicas{% endblock %}
+
+{% block contenido %}
+<div class="tarjeta">
+    <form id="form" class="form-group">
+        <input type="hidden" id="id">
+        <select id="turno" required>
+            <option value="">Seleccionar turno...</option>
+        </select>
+        <select id="empleado" required>
+            <option value="">Empleado responsable...</option>
+        </select>
+        <input type="datetime-local" id="fecha_hora_ingreso" required>
+        <input type="text" id="estado_pintura" placeholder="Estado de pintura (Ej. Bueno)" maxlength="100" required>
+        <input type="text" id="estado_vidrios" placeholder="Estado de vidrios (Ej. Sin rayones)" maxlength="100" required>
+        <input type="text" id="estado_opticas" placeholder="Estado de ópticas (Ej. Opacas)" maxlength="100" required>
+        <input type="text" id="danos_preexistentes" placeholder="Daños preexistentes (opcional)">
+        <input type="text" id="observaciones" placeholder="Observaciones (opcional)">
+        <label style="display:flex;align-items:center;gap:6px;">
+            <input type="checkbox" id="confirmada"> Confirmada
+        </label>
+        <button type="submit">Guardar</button>
+        <button type="button" id="btn-cancelar" onclick="limpiar()" style="display:none;">Cancelar</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Turno</th>
+                <th>Empleado</th>
+                <th>Ingreso</th>
+                <th>Estado vehículo</th>
+                <th>Confirmada</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla"></tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const API = '/api/fichas';
+    const $ = id => document.getElementById(id);
+    let lista = [];
+    let turnos = [];
+    let empleados = [];
+
+    function aInputFechaHora(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (isNaN(d)) return iso.slice(0, 16);
+        const pad = n => String(n).padStart(2, '0');
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function formatearFechaHora(iso) {
+        if (!iso) return '-';
+        const d = new Date(iso);
+        return isNaN(d) ? iso : d.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+    }
+
+    function poblarSelects(turnoActualId = null, empleadoActualId = null) {
+        const disponibles = turnos.filter(t => !t.tiene_ficha || t.id_turno === turnoActualId);
+        $('turno').innerHTML = '<option value="">Seleccionar turno...</option>' +
+            disponibles.map(t => `<option value="${t.id_turno}">${t.label}</option>`).join('');
+
+        const empActivos = empleados.filter(e => e.activo || e.id_empleado === empleadoActualId);
+        $('empleado').innerHTML = '<option value="">Empleado responsable...</option>' +
+            empActivos.map(e => `<option value="${e.id_empleado}">${e.nombre} ${e.apellido} (${e.rol})</option>`).join('');
+    }
+
+    async function cargar() {
+        const [fData, tData, eData] = await Promise.all([
+            api(API),
+            api(`${API}/turnos`),
+            api('/api/empleados')
+        ]);
+        lista = fData || [];
+        turnos = tData || [];
+        empleados = eData || [];
+        poblarSelects();
+
+        $('tabla').innerHTML = lista.map(f => `
+            <tr class="${f.confirmada ? '' : 'row-inactive'}">
+                <td>#${f.id_ficha}</td>
+                <td>${f.turno_texto}</td>
+                <td>${f.empleado_nombre}</td>
+                <td>${formatearFechaHora(f.fecha_hora_ingreso)}</td>
+                <td>Pintura: ${f.estado_pintura} | Vidrios: ${f.estado_vidrios} | Ópticas: ${f.estado_opticas}</td>
+                <td>${f.confirmada ? 'Sí' : 'Pendiente'}</td>
+                <td class="actions">
+                    <button class="btn-edit" onclick="editar(${f.id_ficha})">Editar</button>
+                    <button class="${f.confirmada ? 'btn-delete' : 'btn-activate'}" onclick="toggleConfirmada(${f.id_ficha})">
+                        ${f.confirmada ? 'Desconfirmar' : 'Confirmar'}
+                    </button>
+                    <button class="btn-delete" onclick="eliminar(${f.id_ficha})">Eliminar</button>
+                </td>
+            </tr>`).join('');
+    }
+
+    function limpiar() {
+        $('form').reset();
+        $('id').value = '';
+        $('btn-cancelar').style.display = 'none';
+        poblarSelects();
+    }
+
+    function editar(id) {
+        const f = lista.find(x => x.id_ficha === id);
+        if (!f) return;
+        poblarSelects(f.turno, f.empleado);
+        $('id').value = id;
+        $('turno').value = f.turno;
+        $('empleado').value = f.empleado;
+        $('fecha_hora_ingreso').value = aInputFechaHora(f.fecha_hora_ingreso);
+        $('estado_pintura').value = f.estado_pintura;
+        $('estado_vidrios').value = f.estado_vidrios;
+        $('estado_opticas').value = f.estado_opticas;
+        $('danos_preexistentes').value = f.danos_preexistentes || '';
+        $('observaciones').value = f.observaciones || '';
+        $('confirmada').checked = !!f.confirmada;
+        $('btn-cancelar').style.display = 'inline-block';
+    }
+
+    async function toggleConfirmada(id) {
+        const f = lista.find(x => x.id_ficha === id);
+        if (f.confirmada && f.tiene_orden) {
+            return avisar('No se puede desconfirmar: ya tiene una orden de trabajo.');
+        }
+        const msg = f.confirmada ? '¿Marcar esta ficha como pendiente?' : '¿Confirmar esta ficha técnica?';
+        if (confirm(msg) && await api(`${API}/${id}`, 'PATCH', { confirmada: !f.confirmada })) {
+            avisar(f.confirmada ? 'Ficha marcada como pendiente' : 'Ficha confirmada');
+            cargar();
+        }
+    }
+
+    async function eliminar(id) {
+        if (confirm('¿Eliminar esta ficha técnica?') && await api(`${API}/${id}`, 'DELETE')) {
+            avisar('Ficha eliminada');
+            limpiar();
+            cargar();
+        }
+    }
+
+    $('form').addEventListener('submit', async e => {
+        e.preventDefault();
+        const id = $('id').value;
+        const datos = {
+            turno: parseInt($('turno').value),
+            empleado: parseInt($('empleado').value),
+            fecha_hora_ingreso: $('fecha_hora_ingreso').value,
+            estado_pintura: $('estado_pintura').value.trim(),
+            estado_vidrios: $('estado_vidrios').value.trim(),
+            estado_opticas: $('estado_opticas').value.trim(),
+            danos_preexistentes: $('danos_preexistentes').value.trim(),
+            observaciones: $('observaciones').value.trim(),
+            confirmada: $('confirmada').checked
+        };
+
+        if (!datos.estado_pintura || !datos.estado_vidrios || !datos.estado_opticas) {
+            return avisar('Completá el estado de pintura, vidrios y ópticas.');
+        }
+
+        if (await api(id ? `${API}/${id}` : API, id ? 'PUT' : 'POST', datos)) {
+            limpiar();
+            avisar('Ficha técnica guardada');
+            cargar();
+        }
+    });
+
+    cargar();
+</script>
+{% endblock %}
