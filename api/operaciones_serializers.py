@@ -1,4 +1,5 @@
 from decimal import Decimal
+from django.utils import timezone
 from rest_framework import serializers
 
 from operaciones.models import DetalleServicio, FichaTecnica, OrdenTrabajo
@@ -63,6 +64,17 @@ class FichaTecnicaSerializer(serializers.ModelSerializer):
         if self.instance and not value and hasattr(self.instance, "orden_trabajo"):
             raise serializers.ValidationError(
                 "No se puede desconfirmar una ficha que ya tiene una orden de trabajo asociada."
+            )
+        return value
+    
+    def validate_fecha_hora_ingreso(self, value):
+        hoy = timezone.localdate()
+        fecha_valor = timezone.localtime(value).date() if timezone.is_aware(value) else value.date()
+        if fecha_valor < hoy:
+            if self.instance and self.instance.fecha_hora_ingreso == value:
+                return value
+            raise serializers.ValidationError(
+                "La fecha de ingreso no puede ser anterior a hoy."
             )
         return value
 
@@ -156,4 +168,14 @@ class OrdenTrabajoSerializer(serializers.ModelSerializer):
     def validate_estado(self, value):
         if value.tipo != "orden":
             raise serializers.ValidationError("El estado seleccionado debe corresponder al tipo 'orden'.")
+        return value
+
+    def validate_hora_inicio(self, value):
+        ahora = timezone.localtime().time().replace(second=0, microsecond=0)
+        if value < ahora:
+            if self.instance and self.instance.hora_inicio == value:
+                return value
+            raise serializers.ValidationError(
+                "La hora de inicio no puede ser anterior a la hora actual."
+            )
         return value

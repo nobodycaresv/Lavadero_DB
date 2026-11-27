@@ -79,6 +79,19 @@
     let empleados = [];
     let detalles = [];
     let ordenSeleccionada = null;
+    function horaActualHHMM() {
+    const ahora = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(ahora.getHours())}:${pad(ahora.getMinutes())}`;
+}
+
+function aplicarMinHora() {
+    if (!$('orden-id').value) {
+        $('hora_inicio').min = horaActualHHMM();
+    }
+}
+
+$('hora_inicio').addEventListener('focus', aplicarMinHora);
 
     function poblarSelectsOrden(fichaActualId = null) {
         const fichasDisponibles = fichas.filter(
@@ -149,6 +162,7 @@
         $('form-orden').reset();
         $('orden-id').value = '';
         $('btn-cancelar-orden').style.display = 'none';
+        aplicarMinHora();
         poblarSelectsOrden();
     }
 
@@ -159,6 +173,7 @@
         $('orden-id').value = id;
         $('ficha_tecnica').value = o.ficha_tecnica;
         $('estado').value = o.estado;
+        $('hora_inicio').removeAttribute('min');
         $('hora_inicio').value = o.hora_inicio.slice(0, 5);
         $('btn-cancelar-orden').style.display = 'inline-block';
     }
@@ -179,6 +194,13 @@
             estado: parseInt($('estado').value),
             hora_inicio: $('hora_inicio').value
         };
+        const horaOriginal = id
+    ? ordenes.find(x => x.id_orden == id)?.hora_inicio.slice(0, 5)
+    : null;
+if (datos.hora_inicio < horaActualHHMM() && datos.hora_inicio !== horaOriginal) {
+    return avisar('La hora de inicio no puede ser anterior a la hora actual.');
+}
+
         if (await api(id ? `${API_ORDENES}/${id}` : API_ORDENES, id ? 'PUT' : 'POST', datos)) {
             limpiarOrden();
             avisar('Orden de trabajo guardada');
@@ -276,6 +298,7 @@
         }
     });
 
+    aplicarMinHora();
     cargarTodo();
 </script>
 {% endblock %}

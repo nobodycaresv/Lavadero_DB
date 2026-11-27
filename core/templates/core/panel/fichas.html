@@ -64,6 +64,16 @@
         return isNaN(d) ? iso : d.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
     }
 
+    function minFechaHoy() {
+    const hoy = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${hoy.getFullYear()}-${pad(hoy.getMonth() + 1)}-${pad(hoy.getDate())}T00:00`;
+}
+
+    function aplicarMinFecha() {
+        $('fecha_hora_ingreso').min = minFechaHoy();
+}
+
     function poblarSelects(turnoActualId = null, empleadoActualId = null) {
         const disponibles = turnos.filter(t => !t.tiene_ficha || t.id_turno === turnoActualId);
         $('turno').innerHTML = '<option value="">Seleccionar turno...</option>' +
@@ -107,6 +117,7 @@
         $('form').reset();
         $('id').value = '';
         $('btn-cancelar').style.display = 'none';
+        aplicarMinFecha();
         poblarSelects();
     }
 
@@ -117,6 +128,7 @@
         $('id').value = id;
         $('turno').value = f.turno;
         $('empleado').value = f.empleado;
+        $('fecha_hora_ingreso').removeAttribute('min');
         $('fecha_hora_ingreso').value = aInputFechaHora(f.fecha_hora_ingreso);
         $('estado_pintura').value = f.estado_pintura;
         $('estado_vidrios').value = f.estado_vidrios;
@@ -166,6 +178,12 @@
             return avisar('Completá el estado de pintura, vidrios y ópticas.');
         }
 
+        const fechaOriginal = id
+        ? aInputFechaHora(lista.find(x => x.id_ficha == id)?.fecha_hora_ingreso)
+        : null;
+if (datos.fecha_hora_ingreso < minFechaHoy() && datos.fecha_hora_ingreso !== fechaOriginal) {
+    return avisar('La fecha de ingreso debe ser de hoy en adelante.');
+}
         if (await api(id ? `${API}/${id}` : API, id ? 'PUT' : 'POST', datos)) {
             limpiar();
             avisar('Ficha técnica guardada');
@@ -173,6 +191,7 @@
         }
     });
 
+    aplicarMinFecha();
     cargar();
 </script>
 {% endblock %}
