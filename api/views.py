@@ -82,7 +82,7 @@ class ServicioViewSet(
     def get_queryset(self):
         # El público solo ve los servicios activos; el personal ve todos
         if self.request.user.is_staff:
-            return self.queryset
+            return self.queryset.all()
         return self.queryset.filter(activo=True)
 
     @action(detail=True, methods=["patch"])
